@@ -1,6 +1,6 @@
 image:
   postfix:
-    repository: ghcr.io/0kaba0hub/yarilo-postfix
+    repository: ghcr.io/yarilomail/yarilo-postfix
     tag: latest
     pullPolicy: Always
   rspamd:
