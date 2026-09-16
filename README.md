@@ -55,9 +55,9 @@ FWD
 One image, behaviour controlled by `RELAY_TYPE`:
 
 ```sh
-docker run -e RELAY_TYPE=mx   ghcr.io/0kaba0hub/yarilo-postfix:latest
-docker run -e RELAY_TYPE=mta  ghcr.io/0kaba0hub/yarilo-postfix:latest
-docker run -e RELAY_TYPE=fwd  ghcr.io/0kaba0hub/yarilo-postfix:latest
+docker run -e RELAY_TYPE=mx   ghcr.io/yarilomail/yarilo-postfix:latest
+docker run -e RELAY_TYPE=mta  ghcr.io/yarilomail/yarilo-postfix:latest
+docker run -e RELAY_TYPE=fwd  ghcr.io/yarilomail/yarilo-postfix:latest
 ```
 
 ## Environment variables
