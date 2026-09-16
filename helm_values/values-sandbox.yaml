@@ -43,6 +43,11 @@ opendkim:
 mx:
   enabled: true
   rblRestrictions: ""
+  # Both listeners, because the smoketest reads both ways a fronted address can
+  # arrive; 25 stays the plain MX.
+  clientAddress:
+    xclientPort: 10024
+    proxyPort: 10025
   service:
     type: ClusterIP
     port: 25

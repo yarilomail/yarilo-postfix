@@ -49,6 +49,15 @@ mx:
   enabled: false
   # Space-separated Postfix reject_rbl_client entries appended to smtpd_recipient_restrictions.
   rblRestrictions: "reject_rbl_client zen.spamhaus.org, reject_rbl_client bl.spamcop.net"
+  # A fronted client's real address reaches the MX one of two ways, and each
+  # needs its own listener: a PROXY one demands the header from every client.
+  clientAddress:
+    # Port offering XCLIENT to xclientHosts. Empty = no such listener.
+    xclientPort: ""
+    # Who may issue XCLIENT there; defaults to mail.mynetworks.
+    xclientHosts: ""
+    # Port requiring a PROXY (haproxy) header. Empty = no such listener.
+    proxyPort: ""
   service:
     type: ClusterIP
     port: 25
