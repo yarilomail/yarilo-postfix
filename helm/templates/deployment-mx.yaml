@@ -25,6 +25,14 @@ spec:
           ports:
             - containerPort: 25
               name: smtp
+            {{- with .Values.mx.clientAddress.xclientPort }}
+            - containerPort: {{ . }}
+              name: xclient
+            {{- end }}
+            {{- with .Values.mx.clientAddress.proxyPort }}
+            - containerPort: {{ . }}
+              name: proxy
+            {{- end }}
           env:
             - name: RELAY_TYPE
               value: mx
@@ -45,6 +53,18 @@ spec:
             {{- if .Values.mx.rblRestrictions }}
             - name: RBL_RESTRICTIONS
               value: {{ .Values.mx.rblRestrictions | quote }}
+            {{- end }}
+            {{- with .Values.mx.clientAddress.xclientPort }}
+            - name: MX_XCLIENT_PORT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.mx.clientAddress.xclientHosts }}
+            - name: MX_XCLIENT_HOSTS
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.mx.clientAddress.proxyPort }}
+            - name: MX_PROXY_PORT
+              value: {{ . | quote }}
             {{- end }}
             {{- include "yarilo-postfix.mysqlEnv" .Values | nindent 12 }}
           volumeMounts:

@@ -34,3 +34,12 @@ postconf -e "non_smtpd_milters ="
 postconf -e "smtpd_client_connection_count_limit = 50"
 postconf -e "smtpd_client_connection_rate_limit = 30"
 postconf -e "smtpd_client_message_rate_limit = 100"
+
+# Two ways for a fronted client's real address to reach this MX, each on its own
+# listener: a PROXY one demands the header from everybody, so 25 cannot serve it.
+if [ -n "${MX_XCLIENT_PORT:-}" ]; then
+    postconf -M "${MX_XCLIENT_PORT}/inet=${MX_XCLIENT_PORT} inet n - n - - smtpd -o smtpd_authorized_xclient_hosts=${MX_XCLIENT_HOSTS:-\$mynetworks}"
+fi
+if [ -n "${MX_PROXY_PORT:-}" ]; then
+    postconf -M "${MX_PROXY_PORT}/inet=${MX_PROXY_PORT} inet n - n - - smtpd -o smtpd_upstream_proxy_protocol=haproxy"
+fi

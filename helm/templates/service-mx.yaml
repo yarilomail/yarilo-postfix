@@ -18,4 +18,14 @@ spec:
     - name: smtp
       port: {{ .Values.mx.service.port }}
       targetPort: smtp
+    {{- with .Values.mx.clientAddress.xclientPort }}
+    - name: xclient
+      port: {{ . }}
+      targetPort: xclient
+    {{- end }}
+    {{- with .Values.mx.clientAddress.proxyPort }}
+    - name: proxy
+      port: {{ . }}
+      targetPort: proxy
+    {{- end }}
 {{- end }}
