@@ -2,5 +2,5 @@ apiVersion: v2
 name: yarilo-postfix
 description: Postfix MX / MTA / FWD relay stack for yarilo
 type: application
-version: 0.1.4
+version: 0.1.5
 appVersion: "latest"

@@ -19,7 +19,7 @@ MX
 MTA
   User ──► Postfix :587
             │  SASL auth
-            ├──────────────────► yarilo-sasl-login :12325
+            ├──────────────────► yarilo-sasl-login :12345
             │  milter
             ├──────────► rspamd-mta :11332
             │            (outbound scan, DKIM sign)
@@ -90,7 +90,7 @@ docker run -e RELAY_TYPE=fwd  ghcr.io/yarilomail/yarilo-postfix:latest
 |:---|:---|:---|
 | `LMTP_HOST` | `yarilo-lmtp` | yarilo-lmtp service hostname |
 | `LMTP_PORT` | `24` | yarilo-lmtp port |
-| `SASL_LOGIN_ADDR` | `yarilo-sasl-login:12325` | yarilo-sasl-login address |
+| `SASL_LOGIN_ADDR` | `yarilo-sasl-login:12345` | yarilo-sasl-login address |
 | `RSPAMD_ADDR` | `localhost:11332` | rspamd milter address |
 
 ### FWD

@@ -6,7 +6,7 @@ LMTP_HOST="${LMTP_HOST:-yarilo-lmtp}"
 LMTP_PORT="${LMTP_PORT:-24}"
 RSPAMD_ADDR="${RSPAMD_ADDR:-localhost:11332}"
 OPENDKIM_ADDR="${OPENDKIM_ADDR:-}"
-SASL_LOGIN_ADDR="${SASL_LOGIN_ADDR:-yarilo-sasl-login:12325}"
+SASL_LOGIN_ADDR="${SASL_LOGIN_ADDR:-yarilo-sasl-login:12345}"
 
 postconf -e "relayhost ="
 postconf -e "virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf"

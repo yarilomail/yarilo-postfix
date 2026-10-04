@@ -10,7 +10,7 @@ mail:
   mynetworks: "127.0.0.0/8 10.0.0.0/8 10.1.0.0/16"
 
 yarilo:
-  saslLoginAddr: "yarilo-sasl-login.yarilo-sb.svc.cluster.local:12325"
+  saslLoginAddr: "yarilo-sasl-login.yarilo-sb.svc.cluster.local:12345"
   lmtpHost: "yarilo-lmtp-login.yarilo-sb.svc.cluster.local"
   lmtpPort: "24"
 
