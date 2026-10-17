@@ -144,6 +144,19 @@ helm upgrade --install yarilo-relay helm/ \
 | `tls.certificate.dnsNames` / `.renewBefore` | `[]` / `720h` | Names and renewal margin |
 | `mta.tls.secretName` | — | relay-mta's own TLS secret in place of `tls.secretName` |
 | `mta.tls.certificate.*` | off; `kind: Issuer` | cert-manager writes `mta.tls.secretName`; same fields as `tls.certificate` |
+| `mta.tls.issuer.enabled` / `.caSecretName` | `false` / — | Create the CA `Issuer` named by `mta.tls.certificate.issuerRef.name` on that CA secret |
+
+### relay-mta's certificate from an internal CA
+
+With `mta.tls.issuer` on, the chart creates the CA `Issuer`; the CA's secret it reads is the one thing copied by hand, once, into the release's namespace. For the stand, from yarilo's internal CA:
+
+```sh
+kubectl -n yarilo-sb get secret yarilo-internal-ca -o json \
+  | jq '{apiVersion, kind, type, data, metadata: {name: "yarilo-internal-ca", namespace: "yarilo-relay"}}' \
+  | kubectl apply -f -
+```
+
+The copy follows the CA's own lifetime (renewed a year before 2036-07-23); copy it again when the CA is renewed.
 | `dkim.secretName` | — | Secret with DKIM private key files |
 | `dkim.selector` | `mail` | DKIM selector |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |

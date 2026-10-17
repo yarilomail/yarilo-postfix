@@ -85,6 +85,11 @@ mta:
         kind: Issuer
       dnsNames: []
       renewBefore: 720h
+    ## issuer creates the CA Issuer named by certificate.issuerRef.name in this
+    ## namespace, on caSecretName (a CA's tls.crt/tls.key, copied in by hand).
+    issuer:
+      enabled: false
+      caSecretName: ""
   service:
     type: ClusterIP
     port: 587

@@ -75,6 +75,13 @@ mta:
         - relay-mta.yarilo-relay.svc.cluster.local
         - relay-mta.yarilo-relay.svc
         - relay-mta.yarilo-relay
+    ## The Issuer on a copy of yarilo-sb's yarilo-internal-ca, made by hand:
+    ##   kubectl -n yarilo-sb get secret yarilo-internal-ca -o json | jq '{apiVersion,
+    ##   kind, type, data, metadata: {name: "yarilo-internal-ca", namespace:
+    ##   "yarilo-relay"}}' | kubectl apply -f -
+    issuer:
+      enabled: true
+      caSecretName: yarilo-internal-ca
   service:
     type: ClusterIP
     port: 587

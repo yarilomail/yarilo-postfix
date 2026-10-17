@@ -11,3 +11,26 @@
 ---
 {{ include "yarilo-postfix.certificate" (dict "secretName" .Values.mta.tls.secretName "cert" .Values.mta.tls.certificate "app" "relay-mta") }}
 {{- end }}
+{{- with .Values.mta.tls.issuer }}
+{{- if and $.Values.mta.enabled .enabled }}
+{{- if not .caSecretName }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.issuer.caSecretName" }}
+{{- end }}
+{{- if not $.Values.mta.tls.certificate.issuerRef.name }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.certificate.issuerRef.name: it names the Issuer" }}
+{{- end }}
+{{- if ne $.Values.mta.tls.certificate.issuerRef.kind "Issuer" }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.certificate.issuerRef.kind: Issuer" }}
+{{- end }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $.Values.mta.tls.certificate.issuerRef.name }}
+  labels:
+    app: relay-mta
+spec:
+  ca:
+    secretName: {{ .caSecretName }}
+{{- end }}
+{{- end }}
