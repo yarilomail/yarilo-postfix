@@ -1,0 +1,26 @@
+{{- with .Values.mta.internalTLS }}
+{{- if and $.Values.mta.enabled .enabled }}
+{{- if not .issuerRef.name }}
+{{- fail "mta.internalTLS.enabled needs mta.internalTLS.issuerRef.name" }}
+{{- end }}
+{{- if not .dnsNames }}
+{{- fail "mta.internalTLS.enabled needs mta.internalTLS.dnsNames" }}
+{{- end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .secretName }}
+  labels:
+    app: relay-mta
+spec:
+  secretName: {{ .secretName }}
+  duration: {{ .duration }}
+  renewBefore: {{ .renewBefore }}
+  issuerRef:
+    name: {{ .issuerRef.name }}
+    kind: {{ .issuerRef.kind }}
+    group: cert-manager.io
+  dnsNames:
+    {{- toYaml .dnsNames | nindent 4 }}
+{{- end }}
+{{- end }}

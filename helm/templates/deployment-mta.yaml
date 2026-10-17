@@ -51,10 +51,25 @@ spec:
               value: "relay-opendkim:8891"
             {{- end }}
             {{- include "yarilo-postfix.mysqlEnv" .Values | nindent 12 }}
+            {{- if .Values.mta.internalTLS.enabled }}
+            - name: MTA_INTERNAL_TLS_NAMES
+              value: {{ join " " .Values.mta.internalTLS.dnsNames | quote }}
+            {{- end }}
           volumeMounts:
             {{- include "yarilo-postfix.tlsMount" .Values.tls.secretName | nindent 12 }}
+            {{- if .Values.mta.internalTLS.enabled }}
+            - name: tls-internal
+              mountPath: /etc/postfix/tls-internal
+              readOnly: true
+            {{- end }}
           resources:
             {{- toYaml .Values.resources.postfix | nindent 12 }}
       volumes:
         {{- include "yarilo-postfix.tlsVolume" .Values.tls.secretName | nindent 8 }}
+        {{- if .Values.mta.internalTLS.enabled }}
+        - name: tls-internal
+          secret:
+            secretName: {{ .Values.mta.internalTLS.secretName }}
+            defaultMode: 0440
+        {{- end }}
 {{- end }}
