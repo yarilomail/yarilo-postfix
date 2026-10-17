@@ -20,6 +20,26 @@ mysql:
 
 tls:
   secretName: yarilo-tls
+  ## Issued by the stand's internal CA, the one yarilo verifies the relay with
+  ## (submission_relay_ssl_ca); one certificate for the three relays that mount it.
+  certificate:
+    enabled: true
+    issuerRef:
+      name: yarilo-internal-ca
+      kind: ClusterIssuer
+    dnsNames:
+      - relay-mta.yarilo-relay.svc.cluster.local
+      - relay-mta.yarilo-relay.svc
+      - relay-mta.yarilo-relay
+      - relay-mta
+      - relay-mx.yarilo-relay.svc.cluster.local
+      - relay-mx.yarilo-relay.svc
+      - relay-mx.yarilo-relay
+      - relay-mx
+      - relay-fwd.yarilo-relay.svc.cluster.local
+      - relay-fwd.yarilo-relay.svc
+      - relay-fwd.yarilo-relay
+      - relay-fwd
 
 dkim:
   selector: defaultmail

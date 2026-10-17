@@ -139,6 +139,10 @@ helm upgrade --install yarilo-relay helm/ \
 | `yarilo.saslLoginAddr` | — | yarilo-sasl-login address |
 | `mysql.secretName` | — | Secret with `MYSQL_HOST/USER/PASSWORD/DBNAME` keys |
 | `tls.secretName` | — | TLS secret for STARTTLS |
+| `tls.certificate.enabled` | `false` | cert-manager writes `tls.secretName` (a `Certificate` of the same name) |
+| `tls.certificate.issuerRef.name` / `.kind` | — / `ClusterIssuer` | Issuer of that certificate, e.g. an internal CA for a cluster-internal relay |
+| `tls.certificate.dnsNames` | `[]` | Names the relays are dialled by; one certificate serves every relay that mounts the secret |
+| `tls.certificate.duration` / `.renewBefore` | `2160h` / `720h` | Lifetime and renewal margin |
 | `dkim.secretName` | — | Secret with DKIM private key files |
 | `dkim.selector` | `mail` | DKIM selector |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |

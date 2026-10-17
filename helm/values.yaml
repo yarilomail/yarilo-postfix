@@ -34,6 +34,17 @@ mysql:
 
 tls:
   secretName: ""
+  ## certificate has cert-manager write tls.secretName instead of a copy made by
+  ## hand: an issuer (an internal CA for a cluster-internal relay) and the names
+  ## the relay is dialled by.
+  certificate:
+    enabled: false
+    issuerRef:
+      name: ""
+      kind: ClusterIssuer
+    dnsNames: []
+    duration: 2160h
+    renewBefore: 720h
 
 dkim:
   selector: defaultmail
