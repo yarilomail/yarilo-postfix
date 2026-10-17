@@ -1,0 +1,36 @@
+{{- if .Values.tls.certificate.enabled }}
+{{- if not .Values.tls.secretName }}
+{{- fail "tls.certificate.enabled needs tls.secretName: the Certificate writes that Secret" }}
+{{- end }}
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.tls.secretName "cert" .Values.tls.certificate "app" "relay-tls") }}
+{{- end }}
+{{- if and .Values.mta.enabled .Values.mta.tls.certificate.enabled }}
+{{- if not .Values.mta.tls.secretName }}
+{{- fail "mta.tls.certificate.enabled needs mta.tls.secretName: the Certificate writes that Secret" }}
+{{- end }}
+---
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.mta.tls.secretName "cert" .Values.mta.tls.certificate "app" "relay-mta") }}
+{{- end }}
+{{- with .Values.mta.tls.issuer }}
+{{- if and $.Values.mta.enabled .enabled }}
+{{- if not .caSecretName }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.issuer.caSecretName" }}
+{{- end }}
+{{- if not $.Values.mta.tls.certificate.issuerRef.name }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.certificate.issuerRef.name: it names the Issuer" }}
+{{- end }}
+{{- if ne $.Values.mta.tls.certificate.issuerRef.kind "Issuer" }}
+{{- fail "mta.tls.issuer.enabled needs mta.tls.certificate.issuerRef.kind: Issuer" }}
+{{- end }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $.Values.mta.tls.certificate.issuerRef.name }}
+  labels:
+    app: relay-mta
+spec:
+  ca:
+    secretName: {{ .caSecretName }}
+{{- end }}
+{{- end }}

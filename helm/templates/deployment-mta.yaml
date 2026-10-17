@@ -52,9 +52,9 @@ spec:
             {{- end }}
             {{- include "yarilo-postfix.mysqlEnv" .Values | nindent 12 }}
           volumeMounts:
-            {{- include "yarilo-postfix.tlsMount" .Values.tls.secretName | nindent 12 }}
+            {{- include "yarilo-postfix.tlsMount" (.Values.mta.tls.secretName | default .Values.tls.secretName) | nindent 12 }}
           resources:
             {{- toYaml .Values.resources.postfix | nindent 12 }}
       volumes:
-        {{- include "yarilo-postfix.tlsVolume" .Values.tls.secretName | nindent 8 }}
+        {{- include "yarilo-postfix.tlsVolume" (.Values.mta.tls.secretName | default .Values.tls.secretName) | nindent 8 }}
 {{- end }}

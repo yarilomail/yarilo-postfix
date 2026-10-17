@@ -34,6 +34,15 @@ mysql:
 
 tls:
   secretName: ""
+  ## certificate has cert-manager write tls.secretName (issuer, names) instead
+  ## of a copy made by hand.
+  certificate:
+    enabled: false
+    issuerRef:
+      name: ""
+      kind: ClusterIssuer
+    dnsNames: []
+    renewBefore: 720h
 
 dkim:
   selector: defaultmail
@@ -65,6 +74,22 @@ mx:
 
 mta:
   enabled: false
+  ## tls gives relay-mta a secret of its own in place of tls.secretName, with
+  ## its own certificate (e.g. an internal CA on the service name).
+  tls:
+    secretName: ""
+    certificate:
+      enabled: false
+      issuerRef:
+        name: ""
+        kind: Issuer
+      dnsNames: []
+      renewBefore: 720h
+    ## issuer creates the CA Issuer named by certificate.issuerRef.name in this
+    ## namespace, on caSecretName (a CA's tls.crt/tls.key, copied in by hand).
+    issuer:
+      enabled: false
+      caSecretName: ""
   service:
     type: ClusterIP
     port: 587
