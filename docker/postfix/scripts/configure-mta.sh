@@ -49,15 +49,3 @@ submission inet n       -       n       -       -       smtpd
   -o milter_macro_daemon_name=ORIGINATING
 EOF
 fi
-
-# The cluster-internal names get the internal certificate by SNI; every other
-# client keeps the default one above.
-if [ -f "/run/postfix/tls-internal/tls.crt" ] && [ -n "${MTA_INTERNAL_TLS_NAMES:-}" ]; then
-    _db=$(postconf -h default_database_type)
-    : > /etc/postfix/sni_internal
-    for _name in ${MTA_INTERNAL_TLS_NAMES}; do
-        echo "${_name} /run/postfix/tls-internal/tls.key /run/postfix/tls-internal/tls.crt" >> /etc/postfix/sni_internal
-    done
-    postmap -F "${_db}:/etc/postfix/sni_internal"
-    postconf -e "tls_server_sni_maps = ${_db}:/etc/postfix/sni_internal"
-fi

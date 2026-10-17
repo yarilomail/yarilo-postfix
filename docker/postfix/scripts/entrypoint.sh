@@ -9,14 +9,6 @@ if [ -f "/etc/postfix/tls/tls.crt" ]; then
     chmod 600 /run/postfix/tls/tls.key
 fi
 
-if [ -f "/etc/postfix/tls-internal/tls.crt" ]; then
-    mkdir -p /run/postfix/tls-internal
-    cp /etc/postfix/tls-internal/tls.crt /run/postfix/tls-internal/tls.crt
-    cp /etc/postfix/tls-internal/tls.key /run/postfix/tls-internal/tls.key
-    chmod 644 /run/postfix/tls-internal/tls.crt
-    chmod 600 /run/postfix/tls-internal/tls.key
-fi
-
 case "${RELAY_TYPE:-}" in
     mx)  /configure-mx.sh ;;
     mta) /configure-mta.sh ;;

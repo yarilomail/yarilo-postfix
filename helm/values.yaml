@@ -34,6 +34,15 @@ mysql:
 
 tls:
   secretName: ""
+  ## certificate has cert-manager write tls.secretName (issuer, names) instead
+  ## of a copy made by hand.
+  certificate:
+    enabled: false
+    issuerRef:
+      name: ""
+      kind: ClusterIssuer
+    dnsNames: []
+    renewBefore: 720h
 
 dkim:
   selector: defaultmail
@@ -65,18 +74,17 @@ mx:
 
 mta:
   enabled: false
-  ## internalTLS gives relay-mta a second certificate for its cluster-internal
-  ## names only, chosen by SNI: a client dialling relay-mta.<ns>.svc gets it,
-  ## every other client keeps tls.secretName. Issued by cert-manager.
-  internalTLS:
-    enabled: false
-    secretName: relay-mta-internal-tls
-    issuerRef:
-      name: ""
-      kind: ClusterIssuer
-    dnsNames: []
-    duration: 8760h
-    renewBefore: 720h
+  ## tls gives relay-mta a secret of its own in place of tls.secretName, with
+  ## its own certificate (e.g. an internal CA on the service name).
+  tls:
+    secretName: ""
+    certificate:
+      enabled: false
+      issuerRef:
+        name: ""
+        kind: Issuer
+      dnsNames: []
+      renewBefore: 720h
   service:
     type: ClusterIP
     port: 587

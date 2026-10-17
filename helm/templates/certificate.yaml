@@ -1,0 +1,13 @@
+{{- if .Values.tls.certificate.enabled }}
+{{- if not .Values.tls.secretName }}
+{{- fail "tls.certificate.enabled needs tls.secretName: the Certificate writes that Secret" }}
+{{- end }}
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.tls.secretName "cert" .Values.tls.certificate "app" "relay-tls") }}
+{{- end }}
+{{- if and .Values.mta.enabled .Values.mta.tls.certificate.enabled }}
+{{- if not .Values.mta.tls.secretName }}
+{{- fail "mta.tls.certificate.enabled needs mta.tls.secretName: the Certificate writes that Secret" }}
+{{- end }}
+---
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.mta.tls.secretName "cert" .Values.mta.tls.certificate "app" "relay-mta") }}
+{{- end }}

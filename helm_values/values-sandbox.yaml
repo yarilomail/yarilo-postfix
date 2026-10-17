@@ -20,6 +20,14 @@ mysql:
 
 tls:
   secretName: yarilo-tls
+  ## relay-mx and relay-fwd: the public name, renewed by cert-manager (DNS-01).
+  certificate:
+    enabled: true
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+    dnsNames:
+      - mail-sb.seconddns.com
 
 dkim:
   selector: defaultmail
@@ -54,18 +62,19 @@ mx:
 
 mta:
   enabled: true
-  ## yarilo's Submission dials relay-mta by its service name and verifies it
-  ## against the stand's internal CA; the public certificate stays for the rest.
-  internalTLS:
-    enabled: true
-    issuerRef:
-      name: yarilo-internal-ca
-      kind: ClusterIssuer
-    dnsNames:
-      - relay-mta.yarilo-relay.svc.cluster.local
-      - relay-mta.yarilo-relay.svc
-      - relay-mta.yarilo-relay
-      - relay-mta
+  ## relay-mta: yarilo's Submission dials it by its service name and verifies
+  ## it against the internal CA; an Issuer on a copy of that CA lives here.
+  tls:
+    secretName: relay-mta-tls
+    certificate:
+      enabled: true
+      issuerRef:
+        name: yarilo-internal-ca
+        kind: Issuer
+      dnsNames:
+        - relay-mta.yarilo-relay.svc.cluster.local
+        - relay-mta.yarilo-relay.svc
+        - relay-mta.yarilo-relay
   service:
     type: ClusterIP
     port: 587

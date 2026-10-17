@@ -139,11 +139,11 @@ helm upgrade --install yarilo-relay helm/ \
 | `yarilo.saslLoginAddr` | — | yarilo-sasl-login address |
 | `mysql.secretName` | — | Secret with `MYSQL_HOST/USER/PASSWORD/DBNAME` keys |
 | `tls.secretName` | — | TLS secret for STARTTLS |
-| `mta.internalTLS.enabled` | `false` | A second relay-mta certificate for its cluster-internal names, served by SNI; other clients keep `tls.secretName` |
-| `mta.internalTLS.secretName` | `relay-mta-internal-tls` | Secret the `Certificate` writes and relay-mta mounts |
-| `mta.internalTLS.issuerRef.name` / `.kind` | — / `ClusterIssuer` | Issuer, e.g. the cluster's internal CA |
-| `mta.internalTLS.dnsNames` | `[]` | The internal names; only these get the internal certificate |
-| `mta.internalTLS.duration` / `.renewBefore` | `8760h` / `720h` | Lifetime and renewal margin; relay-mta reads the files at start, so restart it after a renewal |
+| `tls.certificate.enabled` | `false` | cert-manager writes `tls.secretName` (a `Certificate` of that name) |
+| `tls.certificate.issuerRef.name` / `.kind` | — / `ClusterIssuer` | Issuer of that certificate |
+| `tls.certificate.dnsNames` / `.renewBefore` | `[]` / `720h` | Names and renewal margin |
+| `mta.tls.secretName` | — | relay-mta's own TLS secret in place of `tls.secretName` |
+| `mta.tls.certificate.*` | off; `kind: Issuer` | cert-manager writes `mta.tls.secretName`; same fields as `tls.certificate` |
 | `dkim.secretName` | — | Secret with DKIM private key files |
 | `dkim.selector` | `mail` | DKIM selector |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
