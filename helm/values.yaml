@@ -105,6 +105,19 @@ fwd:
   lmtpAddr: ""
   saslUser: ""
   saslSecretName: ""
+  ## tls gives relay-fwd a secret of its own in place of tls.secretName, with
+  ## its own certificate (e.g. the internal CA on the service name, which
+  ## yarilo's Sieve sender dials). The Issuer is mta.tls.issuer's or one
+  ## made outside the chart.
+  tls:
+    secretName: ""
+    certificate:
+      enabled: false
+      issuerRef:
+        name: ""
+        kind: Issuer
+      dnsNames: []
+      renewBefore: 720h
   service:
     type: ClusterIP
     port: 25
