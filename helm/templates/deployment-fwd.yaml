@@ -40,9 +40,9 @@ spec:
               value: {{ include "yarilo-postfix.mailDomains" . | quote }}
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
-            {{- if .Values.opendkim.enabled }}
+            {{- with include "yarilo-postfix.dkimSigner" . }}
             - name: OPENDKIM_ADDR
-              value: "relay-opendkim:8891"
+              value: {{ . | quote }}
             {{- end }}
             - name: POSTSRSD_HOST
               value: "relay-postsrsd"

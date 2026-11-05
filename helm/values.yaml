@@ -54,6 +54,11 @@ rspamd:
 opendkim:
   enabled: false
 
+# The DKIM signer as host:port, e.g. dkim-milter:8891 (yarilomail/dkim-milter),
+# in place of the bundled OpenDKIM; both set refuses to render.
+dkimMilter:
+  addr: ""
+
 mx:
   enabled: false
   # Space-separated Postfix reject_rbl_client entries appended to smtpd_recipient_restrictions.

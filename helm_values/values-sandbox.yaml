@@ -45,8 +45,12 @@ resources:
       cpu: 500m
       memory: 512Mi
 
+# dkim-milter signs, installed beside this release in yarilo-relay.
 opendkim:
-  enabled: true
+  enabled: false
+
+dkimMilter:
+  addr: "dkim-milter:8891"
 
 mx:
   enabled: true

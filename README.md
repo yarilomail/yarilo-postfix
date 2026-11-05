@@ -147,6 +147,8 @@ helm upgrade --install yarilo-relay helm/ \
 | `mta.tls.issuer.enabled` / `.caSecretName` | `false` / — | Create the CA `Issuer` named by `mta.tls.certificate.issuerRef.name` on that CA secret |
 | `dkim.secretName` | — | Secret with DKIM private key files |
 | `dkim.selector` | `mail` | DKIM selector |
+| `opendkim.enabled` | `false` | run the bundled OpenDKIM (`relay-opendkim`) as the DKIM signer |
+| `dkimMilter.addr` | --- | the DKIM signer as `host:port`, e.g. `dkim-milter:8891` ([yarilomail/dkim-milter](https://github.com/yarilomail/dkim-milter)), added after rspamd to `smtpd_milters` and `non_smtpd_milters` of `relay-mta` and `relay-fwd`; set with `opendkim.enabled` it refuses to render |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
 
 ### relay-mta's certificate from an internal CA
