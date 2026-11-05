@@ -11,6 +11,13 @@
 ---
 {{ include "yarilo-postfix.certificate" (dict "secretName" .Values.mta.tls.secretName "cert" .Values.mta.tls.certificate "app" "relay-mta") }}
 {{- end }}
+{{- if and .Values.fwd.enabled .Values.fwd.tls.certificate.enabled }}
+{{- if not .Values.fwd.tls.secretName }}
+{{- fail "fwd.tls.certificate.enabled needs fwd.tls.secretName: the Certificate writes that Secret" }}
+{{- end }}
+---
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.fwd.tls.secretName "cert" .Values.fwd.tls.certificate "app" "relay-fwd") }}
+{{- end }}
 {{- with .Values.mta.tls.issuer }}
 {{- if and $.Values.mta.enabled .enabled }}
 {{- if not .caSecretName }}

@@ -145,13 +145,17 @@ helm upgrade --install yarilo-relay helm/ \
 | `mta.tls.secretName` | — | relay-mta's own TLS secret in place of `tls.secretName` |
 | `mta.tls.certificate.*` | off; `kind: Issuer` | cert-manager writes `mta.tls.secretName`; same fields as `tls.certificate` |
 | `mta.tls.issuer.enabled` / `.caSecretName` | `false` / — | Create the CA `Issuer` named by `mta.tls.certificate.issuerRef.name` on that CA secret |
+| `fwd.tls.secretName` | — | relay-fwd's own TLS secret in place of `tls.secretName` |
+| `fwd.tls.certificate.*` | off; `kind: Issuer` | cert-manager writes `fwd.tls.secretName`; same fields as `tls.certificate`, the Issuer from `mta.tls.issuer` |
 | `dkim.secretName` | — | Secret with DKIM private key files |
 | `dkim.selector` | `mail` | DKIM selector |
 | `opendkim.enabled` | `false` | run the bundled OpenDKIM (`relay-opendkim`) as the DKIM signer |
 | `dkimMilter.addr` | --- | the DKIM signer as `host:port`, e.g. `dkim-milter:8891` ([yarilomail/dkim-milter](https://github.com/yarilomail/dkim-milter)), added after rspamd to `smtpd_milters` and `non_smtpd_milters` of `relay-mta` and `relay-fwd` (`DKIM_MILTER_ADDR`) with `default_action=tempfail`, so mail waits in the queue while the signer is down; rspamd keeps `milter_default_action = accept`. Set with `opendkim.enabled` it refuses to render |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
 
-### relay-mta's certificate from an internal CA
+### relay-mta's and relay-fwd's certificates from an internal CA
+
+yarilo dials both by their service names: Submission to relay-mta, the Sieve sender (vacation, redirect, notify) to relay-fwd:587. Each gets its own certificate on those names (`mta.tls`, `fwd.tls`) from one CA `Issuer`, so yarilo verifies both against its internal CA. relay-mx keeps `tls.secretName`.
 
 With `mta.tls.issuer` on, the chart creates the CA `Issuer`; the CA's secret it reads is the one thing copied by hand, once, into the release's namespace. For the stand, from yarilo's internal CA:
 

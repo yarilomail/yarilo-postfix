@@ -92,6 +92,19 @@ fwd:
   lmtpAddr: "yarilo-lmtp-login.yarilo-sb.svc.cluster.local:24"
   saslUser: "sieve_relay"
   saslSecretName: "fwd-sasl-secret"
+  ## yarilo's Sieve sender dials relay-fwd:587 by its service name and
+  ## verifies it against the internal CA, as Submission does relay-mta.
+  tls:
+    secretName: relay-fwd-tls
+    certificate:
+      enabled: true
+      issuerRef:
+        name: yarilo-internal-ca
+        kind: Issuer
+      dnsNames:
+        - relay-fwd.yarilo-relay.svc.cluster.local
+        - relay-fwd.yarilo-relay.svc
+        - relay-fwd.yarilo-relay
   service:
     type: ClusterIP
     port: 25
