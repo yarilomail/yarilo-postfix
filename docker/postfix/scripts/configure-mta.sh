@@ -5,7 +5,7 @@ set -eu
 LMTP_HOST="${LMTP_HOST:-yarilo-lmtp}"
 LMTP_PORT="${LMTP_PORT:-24}"
 RSPAMD_ADDR="${RSPAMD_ADDR:-localhost:11332}"
-OPENDKIM_ADDR="${OPENDKIM_ADDR:-}"
+DKIM_MILTER_ADDR="${DKIM_MILTER_ADDR:-}"
 SASL_LOGIN_ADDR="${SASL_LOGIN_ADDR:-yarilo-sasl-login:12345}"
 
 postconf -e "relayhost ="
@@ -31,8 +31,10 @@ cat > /etc/postfix/sender_login_maps << 'EOF'
 EOF
 
 _milters="inet:${RSPAMD_ADDR}"
-if [ -n "${OPENDKIM_ADDR}" ]; then
-    _milters="${_milters},inet:${OPENDKIM_ADDR}"
+# The signer alone defaults to tempfail: with it down mail waits in the queue
+# instead of leaving unsigned; rspamd keeps milter_default_action (accept).
+if [ -n "${DKIM_MILTER_ADDR}" ]; then
+    _milters="${_milters}, { inet:${DKIM_MILTER_ADDR}, default_action=tempfail }"
 fi
 postconf -e "milter_default_action = accept"
 postconf -e "milter_protocol = 6"

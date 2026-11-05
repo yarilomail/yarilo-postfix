@@ -3,7 +3,7 @@ set -eu
 . /common.sh
 
 RSPAMD_ADDR="${RSPAMD_ADDR:-localhost:11332}"
-OPENDKIM_ADDR="${OPENDKIM_ADDR:-}"
+DKIM_MILTER_ADDR="${DKIM_MILTER_ADDR:-}"
 POSTSRSD_HOST="${POSTSRSD_HOST:-yarilo-postsrsd}"
 LMTP_ADDR="${LMTP_ADDR:-}"
 SASL_USER="${SASL_USER:-}"
@@ -27,8 +27,10 @@ postconf -e "smtpd_relay_restrictions = permit_mynetworks reject_unauth_destinat
 postconf -e "smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination"
 
 _milters="inet:${RSPAMD_ADDR}"
-if [ -n "${OPENDKIM_ADDR}" ]; then
-    _milters="${_milters},inet:${OPENDKIM_ADDR}"
+# The signer alone defaults to tempfail: with it down mail waits in the queue
+# instead of leaving unsigned; rspamd keeps milter_default_action (accept).
+if [ -n "${DKIM_MILTER_ADDR}" ]; then
+    _milters="${_milters}, { inet:${DKIM_MILTER_ADDR}, default_action=tempfail }"
 fi
 postconf -e "milter_default_action = accept"
 postconf -e "milter_protocol = 6"

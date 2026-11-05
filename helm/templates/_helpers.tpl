@@ -56,3 +56,17 @@ TLS volume — no-op when secretName is empty.
     defaultMode: 0440
 {{- end -}}
 {{- end -}}
+
+{{/*
+The DKIM signing milter both relays add: dkim-milter at dkimMilter.addr, or
+the bundled OpenDKIM. Both at once would sign every message twice.
+*/}}
+{{- define "yarilo-postfix.dkimSigner" -}}
+{{- if and .Values.dkimMilter.addr .Values.opendkim.enabled -}}
+{{- fail "dkimMilter.addr and opendkim.enabled both set: pick one DKIM signer" -}}
+{{- else if .Values.dkimMilter.addr -}}
+{{- .Values.dkimMilter.addr -}}
+{{- else if .Values.opendkim.enabled -}}
+relay-opendkim:8891
+{{- end -}}
+{{- end }}

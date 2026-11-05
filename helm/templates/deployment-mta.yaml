@@ -46,9 +46,9 @@ spec:
               value: {{ .Values.yarilo.saslLoginAddr | quote }}
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
-            {{- if .Values.opendkim.enabled }}
-            - name: OPENDKIM_ADDR
-              value: "relay-opendkim:8891"
+            {{- with include "yarilo-postfix.dkimSigner" . }}
+            - name: DKIM_MILTER_ADDR
+              value: {{ . | quote }}
             {{- end }}
             {{- include "yarilo-postfix.mysqlEnv" .Values | nindent 12 }}
           volumeMounts:
