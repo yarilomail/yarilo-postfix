@@ -41,7 +41,7 @@ spec:
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
             {{- with include "yarilo-postfix.dkimSigner" . }}
-            - name: OPENDKIM_ADDR
+            - name: DKIM_MILTER_ADDR
               value: {{ . | quote }}
             {{- end }}
             - name: POSTSRSD_HOST
