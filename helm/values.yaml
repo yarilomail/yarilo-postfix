@@ -79,6 +79,10 @@ mx:
 
 mta:
   enabled: false
+  ## The envelope/From: alignment check as host:port, e.g. mailfrom-milter:10031
+  ## (yarilomail/mailfrom-milter); relay-mta only, before the DKIM signer.
+  mailfromMilter:
+    addr: ""
   ## tls gives relay-mta a secret of its own in place of tls.secretName, with
   ## its own certificate (e.g. an internal CA on the service name).
   tls:

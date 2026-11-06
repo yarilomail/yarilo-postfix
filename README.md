@@ -99,6 +99,10 @@ docker run -e RELAY_TYPE=fwd-out ghcr.io/yarilomail/yarilo-postfix:latest
 | `LMTP_PORT` | `24` | yarilo-lmtp port |
 | `SASL_LOGIN_ADDR` | `yarilo-sasl-login:12345` | yarilo-sasl-login address |
 | `RSPAMD_ADDR` | `localhost:11332` | rspamd milter address |
+| `MAILFROM_MILTER_ADDR` | — | mailfrom-milter, after rspamd and before the signer, `default_action=tempfail` |
+| `DKIM_MILTER_ADDR` | — | DKIM signer, `default_action=tempfail` |
+
+`smtpd_sender_restrictions` is `reject_authenticated_sender_login_mismatch` alone, so an authenticated client in `mynetworks` is held to it too. `smtpd_sender_login_maps` reads the MySQL tables: a login owns its own `mailbox` address and every active `alias` row that names it in `goto` (a list counts, a `goto` that is another alias is not followed, a catch-all gives nothing). Sending as an alias stays within the login's domain: a `goto` naming a login in another domain passes this map, and mailfrom-milter refuses it. yarilo's `identity_aliases` should be built by the same rule, in the login's domain, so a JMAP identity is never refused here.
 
 ### FWD
 
@@ -178,6 +182,7 @@ helm upgrade --install yarilo-relay helm/ \
 | `dkim.selector` | `mail` | DKIM selector |
 | `opendkim.enabled` | `false` | run the bundled OpenDKIM (`relay-opendkim`) as the DKIM signer |
 | `dkimMilter.addr` | --- | the DKIM signer as `host:port`, e.g. `dkim-milter:8891` ([yarilomail/dkim-milter](https://github.com/yarilomail/dkim-milter)), added after rspamd to `smtpd_milters` and `non_smtpd_milters` of `relay-mta` and `relay-fwd` (`DKIM_MILTER_ADDR`) with `default_action=tempfail`, so mail waits in the queue while the signer is down; rspamd keeps `milter_default_action = accept`. Set with `opendkim.enabled` it refuses to render |
+| `mta.mailfromMilter.addr` | --- | mailfrom-milter as `host:port`, e.g. `mailfrom-milter:10031` ([yarilomail/mailfrom-milter](https://github.com/yarilomail/mailfrom-milter)), added to `relay-mta` only (`MAILFROM_MILTER_ADDR`) between rspamd and the signer with `default_action=tempfail`: an authenticated message whose `MAIL FROM` domain is not the login's, or whose `From:` domain is not the `MAIL FROM` domain, is refused before it is signed |
 | `fwd.dkimMilter.addr` | --- | `relay-fwd`'s DKIM signer in place of `dkimMilter.addr`, e.g. `dkim-milter-fwd:8891`, the dkim-milter release with `SIGN_DOMAIN` that signs forwarded mail with the forwarder's domain; empty takes `dkimMilter.addr`. Set with `opendkim.enabled` it refuses to render |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
 
