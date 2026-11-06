@@ -40,7 +40,7 @@ spec:
               value: {{ include "yarilo-postfix.mailDomains" . | quote }}
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
-            {{- with include "yarilo-postfix.dkimSigner" . }}
+            {{- with include "yarilo-postfix.fwdDkimSigner" . }}
             - name: DKIM_MILTER_ADDR
               value: {{ . | quote }}
             {{- end }}
