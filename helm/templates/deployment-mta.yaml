@@ -46,6 +46,10 @@ spec:
               value: {{ .Values.yarilo.saslLoginAddr | quote }}
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
+            {{- with .Values.mta.mailfromMilter.addr }}
+            - name: MAILFROM_MILTER_ADDR
+              value: {{ . | quote }}
+            {{- end }}
             {{- with include "yarilo-postfix.dkimSigner" . }}
             - name: DKIM_MILTER_ADDR
               value: {{ . | quote }}

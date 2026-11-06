@@ -36,6 +36,9 @@ refuses() {
 }
 
 want "no signer: relay-fwd" "$(signer relay-fwd)" none
+want "mailfrom-milter off by default" "$(envvar relay-mta MAILFROM_MILTER_ADDR)" none
+want "mailfrom-milter on relay-mta" "$(envvar relay-mta MAILFROM_MILTER_ADDR --set mta.mailfromMilter.addr=mailfrom-milter:10031)" mailfrom-milter:10031
+want "mailfrom-milter not on relay-fwd" "$(envvar relay-fwd MAILFROM_MILTER_ADDR --set mta.mailfromMilter.addr=mailfrom-milter:10031)" none
 want "shared addr: relay-mta" "$(signer relay-mta --set dkimMilter.addr=dkim-milter:8891)" dkim-milter:8891
 want "shared addr: relay-fwd" "$(signer relay-fwd --set dkimMilter.addr=dkim-milter:8891)" dkim-milter:8891
 want "fwd addr: relay-fwd" "$(signer relay-fwd --set dkimMilter.addr=dkim-milter:8891 --set fwd.dkimMilter.addr=dkim-milter-fwd:8891)" dkim-milter-fwd:8891
