@@ -15,9 +15,6 @@ spec:
   selector:
     app: relay-mta
   ports:
-    - name: smtp
-      port: 25
-      targetPort: smtp
     - name: submission
       port: {{ .Values.mta.service.port }}
       targetPort: submission

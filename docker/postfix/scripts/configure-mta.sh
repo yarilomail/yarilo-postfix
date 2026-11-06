@@ -46,6 +46,13 @@ postconf -e "milter_protocol = 6"
 postconf -e "smtpd_milters = ${_milters}"
 postconf -e "non_smtpd_milters = ${_milters}"
 
+# 587 only: nothing dials 25, and a listener there would take mail from
+# mynetworks without a login.
+if [ ! -f "/run/postfix/tls/tls.crt" ]; then
+    echo "relay-mta: no TLS certificate, and 587 with STARTTLS is its only listener" >&2
+    exit 1
+fi
+postconf -MX smtp/inet
 if [ -f "/run/postfix/tls/tls.crt" ]; then
     cat >> /etc/postfix/master.cf << EOF
 submission inet n       -       n       -       -       smtpd

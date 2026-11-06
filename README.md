@@ -48,8 +48,8 @@ FWD (with relay-fwd-out)
 | Deployment | Port | Function |
 |:---|:---|:---|
 | `relay-mx` | 25 | Inbound MX — spam/RBL scan, LMTP delivery to yarilo |
-| `relay-mta` | 25/587 | Submission — SASL auth via yarilo-sasl-login, DKIM sign |
-| `relay-fwd` | 25/587 | Sieve sender's entry: rspamd, local domains by LMTP; with `fwdOut.enabled` the rest to relay-fwd-out, otherwise it signs and rewrites itself |
+| `relay-mta` | 587 | Submission — SASL auth via yarilo-sasl-login, DKIM sign |
+| `relay-fwd` | 587 | Sieve sender's entry: rspamd, local domains by LMTP; with `fwdOut.enabled` the rest to relay-fwd-out, otherwise it signs and rewrites itself |
 | `relay-fwd-out` | 587 | Forwarded mail out: DKIM sign (dkim-milter-fwd), SRS for senders outside the local domains, rate limit; relay-fwd is its only client |
 | `relay-rspamd-mx` | 11332/11334 | rspamd instance for MX |
 | `relay-rspamd-mta` | 11332/11334 | rspamd instance for MTA |
@@ -169,7 +169,7 @@ helm upgrade --install yarilo-relay helm/ \
 | `yarilo.lmtpPort` | `24` | yarilo-lmtp port |
 | `yarilo.saslLoginAddr` | — | yarilo-sasl-login address |
 | `mysql.secretName` | — | Secret with `MYSQL_HOST/USER/PASSWORD/DBNAME` keys |
-| `tls.secretName` | — | TLS secret for STARTTLS |
+| `tls.secretName` | — | TLS secret for STARTTLS. relay-mta and relay-fwd listen on 587 with STARTTLS only, so each needs this or its own `mta.tls.secretName` / `fwd.tls.secretName`; without one the chart refuses to render |
 | `tls.certificate.enabled` | `false` | cert-manager writes `tls.secretName` (a `Certificate` of that name) |
 | `tls.certificate.issuerRef.name` / `.kind` | — / `ClusterIssuer` | Issuer of that certificate |
 | `tls.certificate.dnsNames` / `.renewBefore` | `[]` / `720h` | Names and renewal margin |
@@ -225,7 +225,7 @@ With `networkPolicy.enabled` each relay pod gets an ingress policy that opens on
 | relay-fwd | 587 | `networkPolicy.forwardFrom` |
 | relay-fwd-out | 587 | relay-fwd, by its labels |
 
-relay-mta and relay-fwd listen on 25 too, but nothing dials it, so the policy leaves it closed. A peer is `{podSelector, namespaceSelector}`; an empty list, or a peer whose `podSelector` is empty, refuses to render, so a slip never opens a port to a whole namespace. The milters, rspamd and postsrsd run in pods of their own that these policies do not select, so their ports are not covered here. Egress is not restricted.
+relay-mta and relay-fwd have no listener on 25: nothing dials it, and one there would take mail from `mail.mynetworks` without a login. A peer is `{podSelector, namespaceSelector}`; an empty list, or a peer whose `podSelector` is empty, refuses to render, so a slip never opens a port to a whole namespace. The milters, rspamd and postsrsd run in pods of their own that these policies do not select, so their ports are not covered here. Egress is not restricted.
 
 ```yaml
 networkPolicy:

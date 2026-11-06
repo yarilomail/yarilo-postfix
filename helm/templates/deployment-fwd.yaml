@@ -1,4 +1,7 @@
 {{- if .Values.fwd.enabled }}
+{{- if not (.Values.fwd.tls.secretName | default .Values.tls.secretName) }}
+{{- fail "fwd.enabled needs fwd.tls.secretName or tls.secretName: 587 with STARTTLS is relay-fwd's only listener" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,8 +26,6 @@ spec:
           image: "{{ .Values.image.postfix.repository }}:{{ .Values.image.postfix.tag }}"
           imagePullPolicy: {{ .Values.image.postfix.pullPolicy }}
           ports:
-            - containerPort: 25
-              name: smtp
             - containerPort: 587
               name: submission
           env:
