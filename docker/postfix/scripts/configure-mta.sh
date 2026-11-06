@@ -25,8 +25,8 @@ postconf -e "smtpd_sasl_local_domain = ${MAIL_DOMAIN}"
 postconf -e "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject"
 # No permit_mynetworks: a login sends as its own address from the pod network too.
 postconf -e "smtpd_sender_restrictions = reject_authenticated_sender_login_mismatch"
-# A login owns its own address and every active alias row naming it in goto
-# (mailfrom-milter's rule); %u keeps the @domain lookup from reaching a catch-all.
+# A login owns its address and the alias rows naming it in goto, in its domain
+# by mailfrom-milter; %u keeps the @domain lookup from reaching a catch-all.
 _gen_mysql_cf /etc/postfix/mysql-sender-login.cf \
     "SELECT username FROM mailbox WHERE username='%u@%d' AND active=1 UNION ALL SELECT goto FROM alias WHERE address='%u@%d' AND active=1"
 postconf -e "smtpd_sender_login_maps = mysql:/etc/postfix/mysql-sender-login.cf"
