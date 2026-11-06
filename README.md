@@ -185,6 +185,10 @@ helm upgrade --install yarilo-relay helm/ \
 | `mta.mailfromMilter.addr` | --- | mailfrom-milter as `host:port`, e.g. `mailfrom-milter:10031` ([yarilomail/mailfrom-milter](https://github.com/yarilomail/mailfrom-milter)), added to `relay-mta` only (`MAILFROM_MILTER_ADDR`) between rspamd and the signer with `default_action=tempfail`: an authenticated message whose `MAIL FROM` domain is not the login's, or whose `From:` domain is not the `MAIL FROM` domain, is refused before it is signed |
 | `fwd.dkimMilter.addr` | --- | `relay-fwd`'s DKIM signer in place of `dkimMilter.addr`, e.g. `dkim-milter-fwd:8891`, the dkim-milter release with `SIGN_DOMAIN` that signs forwarded mail with the forwarder's domain; empty takes `dkimMilter.addr`. Set with `opendkim.enabled` it refuses to render |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
+| `mx.clientAddress.from` | `[]` | With `networkPolicy.enabled`: the pods that dial `mx.clientAddress.xclientPort` and `.proxyPort`, as NetworkPolicy peers; a set port with no peer refuses to render |
+| `networkPolicy.enabled` | `false` | One ingress NetworkPolicy per relay pod, see [NetworkPolicy](#networkpolicy) |
+| `networkPolicy.submissionFrom` | `[]` | The pods that dial relay-mta:587 (yarilo's Submission and JMAP sending) |
+| `networkPolicy.forwardFrom` | `[]` | The pods that dial relay-fwd:587 (yarilo's Sieve redirect and vacation) |
 
 ### relay-mta's and relay-fwd's certificates from an internal CA
 
@@ -208,6 +212,54 @@ relay-fwd logs in to relay-fwd-out with `fwdOut.saslUser` and the `password` key
 kubectl -n yarilo-relay create secret generic fwd-out-sasl-secret \
   --from-literal=password="$(openssl rand -base64 32 | tr -d '\n')"
 ```
+
+### NetworkPolicy
+
+With `networkPolicy.enabled` each relay pod gets an ingress policy that opens only the ports something dials:
+
+| Pod | Port | From |
+|:---|:---|:---|
+| relay-mx | 25 | anywhere |
+| relay-mx | `mx.clientAddress.xclientPort`, `.proxyPort` | `mx.clientAddress.from` only: these listeners take the client address from the peer |
+| relay-mta | 587 | `networkPolicy.submissionFrom` |
+| relay-fwd | 587 | `networkPolicy.forwardFrom` |
+| relay-fwd-out | 587 | relay-fwd, by its labels |
+
+relay-mta and relay-fwd listen on 25 too, but nothing dials it, so the policy leaves it closed. A peer is `{podSelector, namespaceSelector}`; an empty list, or a peer whose `podSelector` is empty, refuses to render, so a slip never opens a port to a whole namespace. The milters, rspamd and postsrsd run in pods of their own that these policies do not select, so their ports are not covered here. Egress is not restricted.
+
+```yaml
+networkPolicy:
+  enabled: true
+  submissionFrom: &yarilo-backend
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: yarilo
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/component: backend
+  forwardFrom: *yarilo-backend
+```
+
+### DNS records
+
+For a mail domain `example.com` and the forwarding (SRS) domain `fwd.example.com`:
+
+| Name | Type | Value |
+|:---|:---|:---|
+| `example.com` | MX | the public name of relay-mx, e.g. `10 mx.example.com.` |
+| `example.com` | TXT | `v=spf1 ip4:<relay-mta egress IP> -all` |
+| `<selector>._domainkey.example.com` | TXT | `v=DKIM1; k=rsa; p=<public key>` of dkim-milter's key for `example.com` |
+| `_dmarc.example.com` | TXT | `v=DMARC1; p=quarantine; rua=mailto:dmarc@example.com` |
+| `<relay-mta egress IP>` | PTR | the relay's hostname (`mail.hostname`), which resolves back to that IP |
+
+Forwarded mail leaves relay-fwd-out with the sender rewritten to `fwd.example.com` (`postsrsd.domain`), so that domain needs records of its own:
+
+| Name | Type | Value |
+|:---|:---|:---|
+| `fwd.example.com` | TXT | `v=spf1 ip4:<relay-fwd-out egress IP> -all` |
+| `<selector>._domainkey.fwd.example.com` | TXT | `v=DKIM1; k=rsa; p=<public key>` of dkim-milter-fwd's key (`d=fwd.example.com`) |
+| `fwd.example.com` | MX | relay-mx, which turns bounces to `SRS0=...@fwd.example.com` back to the sender |
+| `<relay-fwd-out egress IP>` | PTR | a name that resolves back to that IP |
 
 ### SRS
 
@@ -234,7 +286,7 @@ kubectl create secret generic yarilo-postfix-dkim \
   -n yarilo-relay
 ```
 
-`test/render.sh` (run in CI after `helm lint`) checks which DKIM signer each relay renders with and that a signer address set beside `opendkim.enabled` refuses to render.
+`test/render.sh` (run in CI after `helm lint`) checks which DKIM signer each relay renders with, that a signer address set beside `opendkim.enabled` refuses to render, and which ports each NetworkPolicy opens to whom.
 
 ## Release
 

@@ -102,3 +102,27 @@ relay-fwd-out's signer: fwdOut.dkimMilter.addr; OpenDKIM beside it refuses.
 {{- end -}}
 {{- .Values.fwdOut.dkimMilter.addr -}}
 {{- end }}
+
+{{/*
+NetworkPolicy peers for one port: each needs a non-empty podSelector, so a
+slip in values never opens the port to every pod of a namespace.
+Call with (list "<values key>" <peers>).
+*/}}
+{{- define "yarilo-postfix.peers" -}}
+{{- $key := index . 0 -}}
+{{- $peers := index . 1 -}}
+{{- if not $peers -}}
+{{- fail (printf "%s is empty: name the pods that dial this port" $key) -}}
+{{- end -}}
+{{- range $peers -}}
+{{- if not .podSelector -}}
+{{- fail (printf "%s: every peer needs a non-empty podSelector" $key) -}}
+{{- end }}
+- podSelector:
+    {{- toYaml .podSelector | nindent 4 }}
+  {{- with .namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end -}}
+{{- end }}

@@ -60,6 +60,14 @@ mx:
   clientAddress:
     xclientPort: 10024
     proxyPort: 10025
+    # Only the smoketest Job dials them; relay-mx logs show no other client.
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: yarilo-sb
+        podSelector:
+          matchLabels:
+            job-name: smoketest
   service:
     type: ClusterIP
     port: 25
@@ -142,3 +150,17 @@ postsrsd:
   debug: true
   service:
     type: ClusterIP
+
+# yarilo's backend pods dial relay-mta:587 (Submission, JMAP) and
+# relay-fwd:587 (Sieve); the relay logs show no other client.
+networkPolicy:
+  enabled: true
+  submissionFrom: &yarilo-backend
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: yarilo-sb
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: yarilo
+          app.kubernetes.io/component: backend
+  forwardFrom: *yarilo-backend

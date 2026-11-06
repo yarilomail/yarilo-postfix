@@ -73,4 +73,32 @@ refuses "fwdOut without relay-fwd's CA" "fwdOut.enabled needs fwd.tls.secretName
 refuses "fwdOut.dkimMilter.addr with opendkim" "fwdOut.dkimMilter.addr and opendkim.enabled both set" \
   "${out[@]}" --set dkimMilter.addr= --set opendkim.enabled=true
 
+# NetworkPolicy: which ports each relay pod opens, and to whom.
+np=(--set networkPolicy.enabled=true --set mx.enabled=true
+  --set-json 'networkPolicy.submissionFrom=[{"podSelector":{"matchLabels":{"c":"backend"}}}]'
+  --set-json 'networkPolicy.forwardFrom=[{"podSelector":{"matchLabels":{"c":"backend"}}}]')
+# policy <name> <helm args...>: "ports=<p,p> from=<peer labels|any>" per ingress rule, or "none".
+policy() {
+  local name="$1"; shift
+  helm template t helm/ "${base[@]}" "$@" | awk -v d="  name: $name" '
+    /^kind: NetworkPolicy/ {k=1} /^---/ {k=0; in_p=0}
+    k && $0 == d {in_p=1; next}
+    in_p && /^    - / {if (r) out = out r " "; r = ""; from = "any"; ports = ""}
+    in_p && /podSelector:/ && !/^  podSelector/ {from = ""}
+    in_p && /^              [a-z-]+: / && from != "any" {gsub(/^ +/, ""); from = from $0}
+    in_p && /- port:/ {ports = ports (ports ? "," : "") $3}
+    in_p && /protocol:/ {r = "ports=" ports " from=" from}
+    END {if (r) out = out r; print (out ? out : "none")}'
+}
+want "netpol off by default" "$(policy relay-mta)" none
+want "netpol: relay-mx 25 from anywhere, no fronted port" "$(policy relay-mx "${np[@]}")" "ports=25 from=any"
+want "netpol: relay-mx fronted ports from their peers" "$(policy relay-mx "${np[@]}" --set mx.clientAddress.xclientPort=10024 --set mx.clientAddress.proxyPort=10025 --set-json 'mx.clientAddress.from=[{"podSelector":{"matchLabels":{"job-name":"smoketest"}}}]')" "ports=25 from=any ports=10024,10025 from=job-name: smoketest"
+refuses "netpol: fronted port with no peer" "mx.clientAddress.from is empty" "${np[@]}" --set mx.clientAddress.xclientPort=10024
+want "netpol: relay-mta 587 only" "$(policy relay-mta "${np[@]}")" "ports=587 from=c: backend"
+want "netpol: relay-fwd 587 only" "$(policy relay-fwd "${np[@]}")" "ports=587 from=c: backend"
+want "netpol: relay-fwd-out 587 from relay-fwd" "$(policy relay-fwd-out "${np[@]}" "${out[@]}")" "ports=587 from=app: relay-fwd"
+refuses "netpol: relay-mta with no peer" "networkPolicy.submissionFrom is empty" "${np[@]}" --set-json 'networkPolicy.submissionFrom=[]'
+refuses "netpol: empty podSelector" "every peer needs a non-empty podSelector" "${np[@]}" \
+  --set-json 'networkPolicy.forwardFrom=[{"namespaceSelector":{"matchLabels":{"n":"y"}},"podSelector":{}}]'
+
 [ "$fails" -eq 0 ] || { echo "$fails render check(s) failed"; exit 1; }
