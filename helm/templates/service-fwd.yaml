@@ -15,9 +15,6 @@ spec:
   selector:
     app: relay-fwd
   ports:
-    - name: smtp
-      port: {{ .Values.fwd.service.port }}
-      targetPort: smtp
     - name: submission
       port: 587
       targetPort: submission

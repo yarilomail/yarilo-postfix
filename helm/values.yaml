@@ -130,9 +130,9 @@ fwd:
         kind: Issuer
       dnsNames: []
       renewBefore: 720h
+  # 587 only.
   service:
     type: ClusterIP
-    port: 25
     annotations: {}
 
 ## relay-fwd-out signs yarilo's mail for other domains and rewrites its

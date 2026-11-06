@@ -5,7 +5,7 @@ set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 fails=0
-base=(--set fwd.enabled=true --set mta.enabled=true --set mail.domain=example.org)
+base=(--set fwd.enabled=true --set mta.enabled=true --set mail.domain=example.org --set tls.secretName=relay-tls)
 
 # signer <relay> <helm args...>: DKIM_MILTER_ADDR of that relay's Deployment, or "none".
 signer() {
@@ -100,5 +100,22 @@ want "netpol: relay-fwd-out 587 from relay-fwd" "$(policy relay-fwd-out "${np[@]
 refuses "netpol: relay-mta with no peer" "networkPolicy.submissionFrom is empty" "${np[@]}" --set-json 'networkPolicy.submissionFrom=[]'
 refuses "netpol: empty podSelector" "every peer needs a non-empty podSelector" "${np[@]}" \
   --set-json 'networkPolicy.forwardFrom=[{"namespaceSelector":{"matchLabels":{"n":"y"}},"podSelector":{}}]'
+
+# ports <kind> <name>: the ports a Deployment's containers or a Service expose, comma-joined.
+ports() {
+  local kind="$1" name="$2"; shift 2
+  helm template t helm/ "${base[@]}" "$@" | awk -v k="kind: $kind" -v d="  name: $name" '
+    $0 == k {in_k=1} /^---/ {in_k=0; in_d=0}
+    in_k && $0 == d {in_d=1}
+    in_d && /(containerPort|^      port): / {sub(/.*: /, ""); out = out (out ? "," : "") $0}
+    END {print (out ? out : "none")}'
+}
+want "relay-mta Deployment: no 25" "$(ports Deployment relay-mta)" 587
+want "relay-mta Service: no 25" "$(ports Service relay-mta)" 587
+want "relay-fwd Deployment: no 25" "$(ports Deployment relay-fwd)" 587
+want "relay-fwd Service: no 25" "$(ports Service relay-fwd)" 587
+want "relay-mx keeps 25" "$(ports Service relay-mx --set mx.enabled=true)" 25
+refuses "relay-mta without TLS" "mta.enabled needs mta.tls.secretName or tls.secretName" --set tls.secretName= --set fwd.enabled=false
+refuses "relay-fwd without TLS" "fwd.enabled needs fwd.tls.secretName or tls.secretName" --set tls.secretName= --set mta.enabled=false
 
 [ "$fails" -eq 0 ] || { echo "$fails render check(s) failed"; exit 1; }

@@ -118,7 +118,6 @@ fwd:
         - relay-fwd.yarilo-relay
   service:
     type: ClusterIP
-    port: 25
 
 ## Mail for other domains leaves through relay-fwd-out, signed
 ## d=fwd.d00001.test by dkim-milter-fwd and SRS-rewritten to that domain.
