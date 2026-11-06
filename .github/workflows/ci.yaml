@@ -44,6 +44,9 @@ jobs:
       - name: Lint Helm chart
         run: helm lint helm/
 
+      - name: Render checks
+        run: bash test/render.sh
+
   build:
     name: Build & Push
     if: github.event_name == 'push'

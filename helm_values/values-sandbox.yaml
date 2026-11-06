@@ -92,6 +92,10 @@ fwd:
   lmtpAddr: "yarilo-lmtp-login.yarilo-sb.svc.cluster.local:24"
   saslUser: "sieve_relay"
   saslSecretName: "fwd-sasl-secret"
+  ## Forwarded mail is signed d=fwd.d00001.test by the second dkim-milter
+  ## release; only yarilo's Sieve sender logs in on relay-fwd.
+  dkimMilter:
+    addr: "dkim-milter-fwd:8891"
   ## yarilo's Sieve sender dials relay-fwd:587 by its service name and
   ## verifies it against the internal CA, as Submission does relay-mta.
   tls:

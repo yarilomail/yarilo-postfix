@@ -70,3 +70,17 @@ the bundled OpenDKIM. Both at once would sign every message twice.
 relay-opendkim:8891
 {{- end -}}
 {{- end }}
+
+{{/*
+relay-fwd's signer: fwd.dkimMilter.addr (the release that signs forwarded
+mail with the forwarder's domain), else the one both relays share.
+*/}}
+{{- define "yarilo-postfix.fwdDkimSigner" -}}
+{{- if and .Values.fwd.dkimMilter.addr .Values.opendkim.enabled -}}
+{{- fail "fwd.dkimMilter.addr and opendkim.enabled both set: pick one DKIM signer" -}}
+{{- else if .Values.fwd.dkimMilter.addr -}}
+{{- .Values.fwd.dkimMilter.addr -}}
+{{- else -}}
+{{- include "yarilo-postfix.dkimSigner" . -}}
+{{- end -}}
+{{- end }}

@@ -105,6 +105,10 @@ fwd:
   lmtpAddr: ""
   saslUser: ""
   saslSecretName: ""
+  # relay-fwd's DKIM signer as host:port in place of dkimMilter.addr, e.g.
+  # dkim-milter-fwd:8891; empty takes dkimMilter.addr.
+  dkimMilter:
+    addr: ""
   ## tls gives relay-fwd a secret of its own in place of tls.secretName, with
   ## its own certificate (e.g. the internal CA on the service name, which
   ## yarilo's Sieve sender dials). The Issuer is mta.tls.issuer's or one

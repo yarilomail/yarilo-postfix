@@ -151,6 +151,7 @@ helm upgrade --install yarilo-relay helm/ \
 | `dkim.selector` | `mail` | DKIM selector |
 | `opendkim.enabled` | `false` | run the bundled OpenDKIM (`relay-opendkim`) as the DKIM signer |
 | `dkimMilter.addr` | --- | the DKIM signer as `host:port`, e.g. `dkim-milter:8891` ([yarilomail/dkim-milter](https://github.com/yarilomail/dkim-milter)), added after rspamd to `smtpd_milters` and `non_smtpd_milters` of `relay-mta` and `relay-fwd` (`DKIM_MILTER_ADDR`) with `default_action=tempfail`, so mail waits in the queue while the signer is down; rspamd keeps `milter_default_action = accept`. Set with `opendkim.enabled` it refuses to render |
+| `fwd.dkimMilter.addr` | --- | `relay-fwd`'s DKIM signer in place of `dkimMilter.addr`, e.g. `dkim-milter-fwd:8891`, the dkim-milter release with `SIGN_DOMAIN` that signs forwarded mail with the forwarder's domain; empty takes `dkimMilter.addr`. Set with `opendkim.enabled` it refuses to render |
 | `mx.rblRestrictions` | — | Extra Postfix RBL restriction entries |
 
 ### relay-mta's and relay-fwd's certificates from an internal CA
@@ -187,6 +188,8 @@ kubectl create secret generic yarilo-postfix-dkim \
   --from-file=example.com.mail.key=./example.com.mail.key \
   -n yarilo-relay
 ```
+
+`test/render.sh` (run in CI after `helm lint`) checks which DKIM signer each relay renders with and that a signer address set beside `opendkim.enabled` refuses to render.
 
 ## Release
 
