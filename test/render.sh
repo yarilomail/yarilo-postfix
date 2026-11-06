@@ -57,6 +57,7 @@ want "fwd-out: relay-fwd hands over" "$(envvar relay-fwd FWD_OUT_ADDR "${out[@]}
 want "fwd-out: relay-fwd-out rewrites" "$(envvar relay-fwd-out POSTSRSD_HOST "${out[@]}")" relay-postsrsd
 want "fwd-out: relay-mta keeps its signer" "$(signer relay-mta "${out[@]}")" dkim-milter:8891
 want "postsrsd: relay-mx turns bounces back" "$(envvar relay-mx SRS_DOMAIN "${out[@]}" --set postsrsd.domain=fwd.example.org --set mx.enabled=true)" fwd.example.org
+want "postsrsd: relay-mx checks recipients with postsrsd" "$(envvar relay-mx POSTSRSD_HOST "${out[@]}" --set mx.enabled=true)" relay-postsrsd
 want "no postsrsd: relay-mx leaves SRS alone" "$(envvar relay-mx SRS_DOMAIN --set mx.enabled=true)" none
 want "no fwd-out: relay-fwd rewrites as before" "$(envvar relay-fwd POSTSRSD_HOST)" relay-postsrsd
 refuses "fwd.dkimMilter.addr with fwdOut" "relay-fwd-out signs, set fwdOut.dkimMilter.addr" \

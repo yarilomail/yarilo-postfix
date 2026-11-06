@@ -20,9 +20,11 @@ postconf -e "lmtp_assume_final = yes"
 postconf -e "smtpd_relay_restrictions = permit_mynetworks reject_unauth_destination"
 
 # A bounce to an SRS address of forwarded mail: accept the SRS domain and turn
-# the recipient back into the original sender.
+# the recipient back into the original sender. One postsrsd does not reverse
+# is refused at RCPT; relayed, it would come back here through the domain's MX.
 if [ -n "${SRS_DOMAIN}" ] && [ -n "${POSTSRSD_HOST}" ]; then
     postconf -e "relay_domains = ${SRS_DOMAIN}"
+    postconf -e "relay_recipient_maps = socketmap:inet:${POSTSRSD_HOST}:10003:reverse"
     postconf -e "recipient_canonical_maps = socketmap:inet:${POSTSRSD_HOST}:10003:reverse"
     postconf -e "recipient_canonical_classes = envelope_recipient"
 fi

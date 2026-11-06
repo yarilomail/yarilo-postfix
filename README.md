@@ -153,7 +153,7 @@ helm upgrade --install yarilo-relay helm/ \
 | `mx.enabled` | `false` | Enable MX deployment |
 | `mta.enabled` | `false` | Enable MTA deployment |
 | `fwd.enabled` | `false` | Enable FWD deployment |
-| `postsrsd.enabled` | `false` | Enable postsrsd deployment; relay-mx then accepts the SRS domain and reverses its addresses |
+| `postsrsd.enabled` | `false` | Enable postsrsd deployment; relay-mx then accepts the SRS domain, reverses its addresses and refuses at RCPT one postsrsd does not reverse |
 | `postsrsd.domain` | `mail.domain` | SRS domain. With relay-fwd-out it must equal dkim-milter-fwd's `signDomain` (the other chart), and its MX must point at relay-mx |
 | `fwdOut.enabled` | `false` | Deploy relay-fwd-out; needs `fwd.enabled`, `fwd.tls.secretName`, `fwdOut.saslUser`, `fwdOut.saslSecretName` and `fwdOut.tls.secretName`. `fwd.dkimMilter.addr` beside it refuses to render |
 | `fwdOut.saslUser`, `fwdOut.saslSecretName` | --- | relay-fwd's login on relay-fwd-out; the Secret's `password` key is read by both relays |
@@ -206,7 +206,7 @@ kubectl -n yarilo-relay create secret generic fwd-out-sasl-secret \
 
 ### SRS
 
-postsrsd rewrites the envelope sender of forwarded mail on relay-fwd-out only, and only for senders outside the active domains of the `domain` table: a local sender's own domain already passes SPF from the relay. The SRS domain (`postsrsd.domain`) needs an MX at relay-mx, which accepts it as a relay domain and turns `SRS0=...@<domain>` back into the original sender, so a bounce of forwarded mail reaches the sender who wrote it.
+postsrsd rewrites the envelope sender of forwarded mail on relay-fwd-out only, and only for senders outside the active domains of the `domain` table: a local sender's own domain already passes SPF from the relay. The SRS domain (`postsrsd.domain`) needs an MX at relay-mx, which accepts it as a relay domain and turns `SRS0=...@<domain>` back into the original sender, so a bounce of forwarded mail reaches the sender who wrote it. An address in that domain postsrsd does not reverse (forged, or past its lifetime) is refused at RCPT (`relay_recipient_maps` on the same lookup): relayed, it would come back to relay-mx through the domain's MX.
 
 ### MySQL secret
 
