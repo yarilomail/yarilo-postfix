@@ -127,8 +127,40 @@ fwd:
     port: 25
     annotations: {}
 
+## relay-fwd-out signs yarilo's mail for other domains and rewrites its
+## envelope sender with SRS; relay-fwd hands it over on 587 with this login
+## and verifies its certificate against fwd.tls's ca.crt. With it enabled
+## relay-fwd neither signs nor rewrites: fwd.dkimMilter.addr refuses to render.
+fwdOut:
+  enabled: false
+  saslUser: ""
+  # Secret with key password, read by both relays.
+  saslSecretName: ""
+  # dkim-milter-fwd as host:port (signHopsBefore 1 there).
+  dkimMilter:
+    addr: ""
+  tls:
+    secretName: ""
+    certificate:
+      enabled: false
+      issuerRef:
+        name: ""
+        kind: Issuer
+      dnsNames: []
+      renewBefore: 720h
+  ## Forwarded messages per minute through relay-fwd-out, all mailboxes
+  ## together (relay-fwd is its only client). Over it relay-fwd gets 4xx and
+  ## retries from its queue. 0 is off.
+  rateLimit:
+    messagesPerMinute: 0
+  service:
+    port: 587
+
 postsrsd:
   enabled: false
+  # The SRS domain, empty takes mail.domain. With relay-fwd-out it must equal
+  # dkim-milter-fwd's signDomain, and its MX must be relay-mx, which turns
+  # bounces to it back.
   domain: ""
   secretName: ""
   redisAddr: ""

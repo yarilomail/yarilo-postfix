@@ -27,7 +27,7 @@ spec:
               name: socketmap
           env:
             - name: SRS_DOMAIN
-              value: {{ .Values.postsrsd.domain | default .Values.mail.domain | quote }}
+              value: {{ include "yarilo-postfix.srsDomain" . | quote }}
             {{- if .Values.postsrsd.secretName }}
             - name: SRS_SECRET
               valueFrom:

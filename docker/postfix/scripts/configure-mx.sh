@@ -6,6 +6,8 @@ LMTP_HOST="${LMTP_HOST:-yarilo-lmtp}"
 LMTP_PORT="${LMTP_PORT:-24}"
 RSPAMD_ADDR="${RSPAMD_ADDR:-localhost:11332}"
 RBL_RESTRICTIONS="${RBL_RESTRICTIONS:-}"
+SRS_DOMAIN="${SRS_DOMAIN:-}"
+POSTSRSD_HOST="${POSTSRSD_HOST:-}"
 
 postconf -e "relayhost ="
 postconf -e "virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf"
@@ -16,6 +18,14 @@ postconf -e "lmtp_destination_recipient_limit = 1"
 postconf -e "lmtp_assume_final = yes"
 
 postconf -e "smtpd_relay_restrictions = permit_mynetworks reject_unauth_destination"
+
+# A bounce to an SRS address of forwarded mail: accept the SRS domain and turn
+# the recipient back into the original sender.
+if [ -n "${SRS_DOMAIN}" ] && [ -n "${POSTSRSD_HOST}" ]; then
+    postconf -e "relay_domains = ${SRS_DOMAIN}"
+    postconf -e "recipient_canonical_maps = socketmap:inet:${POSTSRSD_HOST}:10003:reverse"
+    postconf -e "recipient_canonical_classes = envelope_recipient"
+fi
 postconf -e "smtpd_helo_required = yes"
 postconf -e "smtpd_helo_restrictions = permit_mynetworks, reject_non_fqdn_helo_hostname, reject_invalid_helo_hostname"
 postconf -e "smtpd_sender_restrictions = permit_mynetworks, reject_non_fqdn_sender, reject_unknown_sender_domain"

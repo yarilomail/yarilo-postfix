@@ -50,6 +50,12 @@ spec:
               value: {{ .Values.yarilo.lmtpPort | quote }}
             - name: RSPAMD_ADDR
               value: "relay-rspamd:11332"
+            {{- if .Values.postsrsd.enabled }}
+            - name: SRS_DOMAIN
+              value: {{ include "yarilo-postfix.srsDomain" . | quote }}
+            - name: POSTSRSD_HOST
+              value: "relay-postsrsd"
+            {{- end }}
             {{- if .Values.mx.rblRestrictions }}
             - name: RBL_RESTRICTIONS
               value: {{ .Values.mx.rblRestrictions | quote }}

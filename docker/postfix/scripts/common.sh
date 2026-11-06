@@ -49,3 +49,22 @@ if [ -f "/run/postfix/tls/tls.crt" ]; then
     postconf -e "smtpd_tls_security_level = may"
     postconf -e "smtpd_tls_loglevel = 1"
 fi
+
+# _sasldb_user <user> <password>: one SASL account in sasldb for smtpd.
+_sasldb_user() {
+    cat > /etc/postfix/sasl/smtpd.conf << 'SASLCF'
+pwcheck_method: auxprop
+auxprop_plugin: sasldb
+sasldb_path: /etc/sasldb2
+mech_list: PLAIN LOGIN
+SASLCF
+    cp /etc/postfix/sasl/smtpd.conf /etc/sasl2/smtpd.conf
+    printf '%s' "$2" | saslpasswd2 -c -f /etc/sasldb2 -u "${MAIL_DOMAIN}" -p "$1"
+    [ -f /etc/sasldb2 ] || { echo "FATAL: saslpasswd2 did not create /etc/sasldb2" >&2; exit 1; }
+    chown postfix:postfix /etc/sasldb2
+    chmod 640 /etc/sasldb2
+    postconf -e "smtpd_sasl_type = cyrus"
+    postconf -e "smtpd_sasl_path = smtpd"
+    postconf -e "smtpd_sasl_security_options = noanonymous"
+    postconf -e "cyrus_sasl_config_path = /etc/sasl2"
+}
