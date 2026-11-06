@@ -1,0 +1,76 @@
+{{- if .Values.fwdOut.enabled }}
+{{- if not .Values.fwd.enabled }}
+{{- fail "fwdOut.enabled needs fwd.enabled: relay-fwd is relay-fwd-out's only client" }}
+{{- end }}
+{{- if .Values.fwd.dkimMilter.addr }}
+{{- fail "fwd.dkimMilter.addr with fwdOut.enabled: relay-fwd-out signs, set fwdOut.dkimMilter.addr" }}
+{{- end }}
+{{- if not (and .Values.fwdOut.saslUser .Values.fwdOut.saslSecretName) }}
+{{- fail "fwdOut.enabled needs fwdOut.saslUser and fwdOut.saslSecretName: relay-fwd logs in with them" }}
+{{- end }}
+{{- if not .Values.fwdOut.tls.secretName }}
+{{- fail "fwdOut.enabled needs fwdOut.tls.secretName: relay-fwd verifies relay-fwd-out against its issuer" }}
+{{- end }}
+{{- if not .Values.fwd.tls.secretName }}
+{{- fail "fwdOut.enabled needs fwd.tls.secretName: its ca.crt is what relay-fwd verifies relay-fwd-out with" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay-fwd-out
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: relay-fwd-out
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: relay-fwd-out
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: relay-fwd-out
+    spec:
+      containers:
+        - name: postfix
+          image: "{{ .Values.image.postfix.repository }}:{{ .Values.image.postfix.tag }}"
+          imagePullPolicy: {{ .Values.image.postfix.pullPolicy }}
+          ports:
+            - containerPort: 587
+              name: submission
+          env:
+            - name: RELAY_TYPE
+              value: fwd-out
+            - name: MAIL_DOMAIN
+              value: {{ .Values.mail.domain | quote }}
+            - name: MAIL_HOSTNAME
+              value: {{ .Values.mail.hostname | quote }}
+            - name: MAIL_MYNETWORKS
+              value: {{ .Values.mail.mynetworks | quote }}
+            {{- with include "yarilo-postfix.fwdOutDkimSigner" . }}
+            - name: DKIM_MILTER_ADDR
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .Values.postsrsd.enabled }}
+            - name: POSTSRSD_HOST
+              value: "relay-postsrsd"
+            {{- end }}
+            - name: SASL_USER
+              value: {{ .Values.fwdOut.saslUser | quote }}
+            - name: SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fwdOut.saslSecretName }}
+                  key: password
+            - name: RATE_LIMIT
+              value: {{ .Values.fwdOut.rateLimit.messagesPerMinute | quote }}
+            {{- include "yarilo-postfix.mysqlEnv" .Values | nindent 12 }}
+          volumeMounts:
+            {{- include "yarilo-postfix.tlsMount" .Values.fwdOut.tls.secretName | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources.postfix | nindent 12 }}
+      volumes:
+        {{- include "yarilo-postfix.tlsVolume" .Values.fwdOut.tls.secretName | nindent 8 }}
+{{- end }}

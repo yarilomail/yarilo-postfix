@@ -1,0 +1,17 @@
+{{- if .Values.fwdOut.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: relay-fwd-out
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: relay-fwd-out
+spec:
+  type: ClusterIP
+  selector:
+    app: relay-fwd-out
+  ports:
+    - name: submission
+      port: {{ .Values.fwdOut.service.port }}
+      targetPort: submission
+{{- end }}

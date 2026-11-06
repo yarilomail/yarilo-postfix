@@ -41,3 +41,7 @@ spec:
     secretName: {{ .caSecretName }}
 {{- end }}
 {{- end }}
+{{- if and .Values.fwdOut.enabled .Values.fwdOut.tls.certificate.enabled }}
+---
+{{ include "yarilo-postfix.certificate" (dict "secretName" .Values.fwdOut.tls.secretName "cert" .Values.fwdOut.tls.certificate "app" "relay-fwd-out") }}
+{{- end }}

@@ -84,3 +84,21 @@ mail with the forwarder's domain), else the one both relays share.
 {{- include "yarilo-postfix.dkimSigner" . -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+The SRS domain: postsrsd.domain, else mail.domain. It must equal
+dkim-milter-fwd's signDomain, which lives in the other chart.
+*/}}
+{{- define "yarilo-postfix.srsDomain" -}}
+{{- .Values.postsrsd.domain | default .Values.mail.domain -}}
+{{- end }}
+
+{{/*
+relay-fwd-out's signer: fwdOut.dkimMilter.addr; OpenDKIM beside it refuses.
+*/}}
+{{- define "yarilo-postfix.fwdOutDkimSigner" -}}
+{{- if and .Values.fwdOut.dkimMilter.addr .Values.opendkim.enabled -}}
+{{- fail "fwdOut.dkimMilter.addr and opendkim.enabled both set: pick one DKIM signer" -}}
+{{- end -}}
+{{- .Values.fwdOut.dkimMilter.addr -}}
+{{- end }}

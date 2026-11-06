@@ -92,10 +92,6 @@ fwd:
   lmtpAddr: "yarilo-lmtp-login.yarilo-sb.svc.cluster.local:24"
   saslUser: "sieve_relay"
   saslSecretName: "fwd-sasl-secret"
-  ## Forwarded mail is signed d=fwd.d00001.test by the second dkim-milter
-  ## release; only yarilo's Sieve sender logs in on relay-fwd.
-  dkimMilter:
-    addr: "dkim-milter-fwd:8891"
   ## yarilo's Sieve sender dials relay-fwd:587 by its service name and
   ## verifies it against the internal CA, as Submission does relay-mta.
   tls:
@@ -113,9 +109,32 @@ fwd:
     type: ClusterIP
     port: 25
 
+## Mail for other domains leaves through relay-fwd-out, signed
+## d=fwd.d00001.test by dkim-milter-fwd and SRS-rewritten to that domain.
+fwdOut:
+  enabled: true
+  saslUser: "fwd_out"
+  saslSecretName: "fwd-out-sasl-secret"
+  dkimMilter:
+    addr: "dkim-milter-fwd:8891"
+  tls:
+    secretName: relay-fwd-out-tls
+    certificate:
+      enabled: true
+      issuerRef:
+        name: yarilo-internal-ca
+        kind: Issuer
+      dnsNames:
+        - relay-fwd-out.yarilo-relay.svc.cluster.local
+        - relay-fwd-out.yarilo-relay.svc
+        - relay-fwd-out.yarilo-relay
+  rateLimit:
+    messagesPerMinute: 30
+
 postsrsd:
   enabled: true
-  domain: mail-sb.seconddns.com
+  # dkim-milter-fwd's signDomain (values-sandbox-fwd.yaml in dkim-milter).
+  domain: fwd.d00001.test
   secretName: postsrsd-secret
   debug: true
   service:
