@@ -72,6 +72,10 @@ mx:
     xclientHosts: ""
     # Port requiring a PROXY (haproxy) header. Empty = no such listener.
     proxyPort: ""
+    # With networkPolicy.enabled: the pods that dial xclientPort and proxyPort,
+    # as NetworkPolicy peers ({podSelector, namespaceSelector}); a set port
+    # with no peer refuses to render.
+    from: []
   service:
     type: ClusterIP
     port: 25
@@ -171,6 +175,16 @@ postsrsd:
   debug: false
   service:
     type: ClusterIP
+
+## Ingress NetworkPolicy per relay pod: relay-mx 25 from anywhere, relay-mta
+## and relay-fwd 587 from the peers below, relay-fwd-out 587 from relay-fwd.
+## A peer is {podSelector, namespaceSelector}; podSelector must not be empty.
+networkPolicy:
+  enabled: false
+  # Pods that dial relay-mta:587 (Submission and JMAP sending).
+  submissionFrom: []
+  # Pods that dial relay-fwd:587 (Sieve redirect and vacation).
+  forwardFrom: []
 
 resources:
   postfix:

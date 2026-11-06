@@ -1,0 +1,101 @@
+{{- /*
+Ingress to the relay pods, one policy per pod, each port open only to the
+pods that dial it. The milters, rspamd and postsrsd run in pods of their own
+that these policies do not select. Egress is left open.
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- if .Values.mx.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-mx
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: relay-mx
+  policyTypes: [Ingress]
+  ingress:
+    # Inbound mail from anywhere.
+    - ports:
+        - port: 25
+          protocol: TCP
+    {{- with .Values.mx.clientAddress }}
+    {{- if or .xclientPort .proxyPort }}
+    # These listeners take the client address from the peer: only the front.
+    - from:
+        {{- include "yarilo-postfix.peers" (list "mx.clientAddress.from" .from) | trim | nindent 8 }}
+      ports:
+        {{- with .xclientPort }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+        {{- with .proxyPort }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+    {{- end }}
+{{- end }}
+{{- if .Values.mta.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-mta
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: relay-mta
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- include "yarilo-postfix.peers" (list "networkPolicy.submissionFrom" .Values.networkPolicy.submissionFrom) | trim | nindent 8 }}
+      ports:
+        - port: 587
+          protocol: TCP
+{{- end }}
+{{- if .Values.fwd.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-fwd
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: relay-fwd
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- include "yarilo-postfix.peers" (list "networkPolicy.forwardFrom" .Values.networkPolicy.forwardFrom) | trim | nindent 8 }}
+      ports:
+        - port: 587
+          protocol: TCP
+{{- end }}
+{{- if .Values.fwdOut.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-fwd-out
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: relay-fwd-out
+  policyTypes: [Ingress]
+  ingress:
+    # relay-fwd is its only client.
+    - from:
+        - podSelector:
+            matchLabels:
+              app: relay-fwd
+      ports:
+        - port: 587
+          protocol: TCP
+{{- end }}
+{{- end }}
