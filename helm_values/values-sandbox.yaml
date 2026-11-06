@@ -66,6 +66,9 @@ mx:
 
 mta:
   enabled: true
+  ## Sender check before the signer; the milter runs in this namespace.
+  mailfromMilter:
+    addr: "mailfrom-milter:10031"
   ## relay-mta: yarilo's Submission dials it by its service name and verifies
   ## it against the internal CA; an Issuer on a copy of that CA lives here.
   tls:
