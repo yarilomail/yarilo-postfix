@@ -27,6 +27,35 @@ data:
     enabled = false;
   classifier-bayes.conf: |
     enabled = false;
+  # Inbound mail only (no login, not from a local address): our own
+  # Authentication-Results, which arc-milter copies when the message is
+  # forwarded, and the score that yarilo's Sieve spamtest reads. A header of
+  # either name the sender brought, with our authserv-id, is dropped first.
+  milter_headers.conf: |
+    use = ["authentication-results", "x_spam_score"];
+    skip_local = true;
+    skip_authenticated = true;
+    routines {
+      authentication-results {
+        remove_ar_from = ["{{ .Values.mail.hostname }}"];
+      }
+    }
+    custom {
+      x_spam_score = <<EOD
+    return function(task, common_meta)
+      local ip = task:get_ip()
+      if task:get_user() ~= nil or (ip and ip:is_local()) then
+        return nil, {}, {}, {}
+      end
+      local r = task:get_metric_result()
+      local add = {}
+      if r and r.score then
+        add['X-Spam-Score'] = string.format('%.2f', r.score)
+      end
+      return nil, add, {['X-Spam-Score'] = 0}, {}
+    end
+    EOD;
+    }
   worker-normal.inc: |
     count = 1;
   worker-proxy.inc: |
