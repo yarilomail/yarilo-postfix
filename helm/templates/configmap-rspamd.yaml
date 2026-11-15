@@ -27,6 +27,12 @@ data:
     enabled = false;
   classifier-bayes.conf: |
     enabled = false;
+  # Postfix's mynetworks count as local beside rspamd's built-in private ranges
+  # (local.d adds to the list): one rspamd serves every relay, and
+  # milter_headers below skips what comes from them, so a pod network outside
+  # the built-in ranges still counts.
+  options.inc: |
+    local_addrs = [{{ range $i, $n := splitList " " .Values.mail.mynetworks }}{{ if $n }}{{ if $i }}, {{ end }}"{{ $n }}"{{ end }}{{ end }}];
   # Inbound mail only (no login, not from a local address): our own
   # Authentication-Results, which arc-milter copies when the message is
   # forwarded, and the score that yarilo's Sieve spamtest reads. A header of
