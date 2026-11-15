@@ -27,6 +27,41 @@ data:
     enabled = false;
   classifier-bayes.conf: |
     enabled = false;
+  # Postfix's mynetworks count as local beside rspamd's built-in private ranges
+  # (local.d adds to the list): one rspamd serves every relay, and
+  # milter_headers below skips what comes from them, so a pod network outside
+  # the built-in ranges still counts.
+  options.inc: |
+    local_addrs = [{{ range $i, $n := splitList " " .Values.mail.mynetworks }}{{ if $n }}{{ if $i }}, {{ end }}"{{ $n }}"{{ end }}{{ end }}];
+  # Inbound mail only (no login, not from a local address): our own
+  # Authentication-Results, which arc-milter copies when the message is
+  # forwarded, and the score that yarilo's Sieve spamtest reads. A header of
+  # either name the sender brought, with our authserv-id, is dropped first.
+  milter_headers.conf: |
+    use = ["authentication-results", "x_spam_score"];
+    skip_local = true;
+    skip_authenticated = true;
+    routines {
+      authentication-results {
+        remove_ar_from = ["{{ .Values.mail.hostname }}"];
+      }
+    }
+    custom {
+      x_spam_score = <<EOD
+    return function(task, common_meta)
+      local ip = task:get_ip()
+      if task:get_user() ~= nil or (ip and ip:is_local()) then
+        return nil, {}, {}, {}
+      end
+      local r = task:get_metric_result()
+      local add = {}
+      if r and r.score then
+        add['X-Spam-Score'] = string.format('%.2f', r.score)
+      end
+      return nil, add, {['X-Spam-Score'] = 0}, {}
+    end
+    EOD;
+    }
   worker-normal.inc: |
     count = 1;
   worker-proxy.inc: |

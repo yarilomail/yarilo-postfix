@@ -261,6 +261,15 @@ Forwarded mail leaves relay-fwd-out with the sender rewritten to `fwd.example.co
 | `fwd.example.com` | MX | relay-mx, which turns bounces to `SRS0=...@fwd.example.com` back to the sender |
 | `<relay-fwd-out egress IP>` | PTR | a name that resolves back to that IP |
 
+### Headers on inbound mail
+
+rspamd's `milter_headers` (`relay-rspamd-config`, `milter_headers.conf`) adds two headers to mail that arrives with no login and not from a local address, which in practice is relay-mx's inbound mail; mail sent with a login through relay-mta or relay-fwd gets neither:
+
+- `Authentication-Results` with the authserv-id `mail.hostname` and the SPF, DKIM and DMARC results of the arrival. An `Authentication-Results` the sender brought with that same authserv-id is removed first (`remove_ar_from`), so a forged `dmarc=pass` never reaches the mailbox or, on a forward, arc-milter, which copies this header into the ARC seal. Headers with other authserv-ids stay.
+- `X-Spam-Score`, rspamd's score as a number (`6.30`), which yarilo's Sieve `spamtest` reads (`sieve_spamtest_status_header`). One the sender brought is removed.
+
+`X-Spam: Yes` (the proxy's `spam_header`, from `rspamd.addHeaderScore`) is added as before.
+
 ### SRS
 
 postsrsd rewrites the envelope sender of forwarded mail on relay-fwd-out only, and only for senders outside the active domains of the `domain` table: a local sender's own domain already passes SPF from the relay. The SRS domain (`postsrsd.domain`) needs an MX at relay-mx, which accepts it as a relay domain and turns `SRS0=...@<domain>` back into the original sender, so a bounce of forwarded mail reaches the sender who wrote it. An address in that domain postsrsd does not reverse (forged, or past its lifetime) is refused at RCPT (`relay_recipient_maps` on the same lookup): relayed, it would come back to relay-mx through the domain's MX.

@@ -15,6 +15,9 @@ spec:
     metadata:
       labels:
         app: relay-rspamd
+      annotations:
+        # rspamd does not reread local.d: a config change rolls the pod.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-rspamd.yaml") . | sha256sum }}
     spec:
       containers:
         - name: rspamd
