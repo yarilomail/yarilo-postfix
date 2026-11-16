@@ -118,4 +118,39 @@ want "relay-mx keeps 25" "$(ports Service relay-mx --set mx.enabled=true)" 25
 refuses "relay-mta without TLS" "mta.enabled needs mta.tls.secretName or tls.secretName" --set tls.secretName= --set fwd.enabled=false
 refuses "relay-fwd without TLS" "fwd.enabled needs fwd.tls.secretName or tls.secretName" --set tls.secretName= --set mta.enabled=false
 
+# arc-milter: on relay-fwd-out only, after the DKIM signer.
+want "arc-milter off by default" "$(envvar relay-fwd-out ARC_MILTER_ADDR "${out[@]}")" none
+want "arc-milter on relay-fwd-out" "$(envvar relay-fwd-out ARC_MILTER_ADDR "${out[@]}" --set fwdOut.arcMilter.addr=arc-milter:8893)" arc-milter:8893
+want "arc-milter not on relay-fwd" "$(envvar relay-fwd ARC_MILTER_ADDR "${out[@]}" --set fwdOut.arcMilter.addr=arc-milter:8893)" none
+want "arc-milter not on relay-mta" "$(envvar relay-mta ARC_MILTER_ADDR "${out[@]}" --set fwdOut.arcMilter.addr=arc-milter:8893)" none
+
+# relay-fwd-out's milter list: the signer, then the sealer; each alone as well.
+fwdout_milters() {
+  ( postconf() { case "$2" in smtpd_milters\ =*) echo "${2#smtpd_milters = }" ;; esac; }
+    _gen_mysql_cf() { :; }; _sasldb_user() { :; }
+    sed -n '/^_milters=""/,/^postconf -e "smtpd_milters/p' docker/postfix/scripts/configure-fwd-out.sh > "$tmp/m.sh"
+    DKIM_MILTER_ADDR="$1" ARC_MILTER_ADDR="$2"; . "$tmp/m.sh" )
+}
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+want "milters: signer then sealer" "$(fwdout_milters dkim-milter-fwd:8891 arc-milter:8893)" \
+  "{ inet:dkim-milter-fwd:8891, default_action=tempfail }, { inet:arc-milter:8893, default_action=tempfail }"
+want "milters: signer alone" "$(fwdout_milters dkim-milter-fwd:8891 "")" "{ inet:dkim-milter-fwd:8891, default_action=tempfail }"
+want "milters: sealer alone" "$(fwdout_milters "" arc-milter:8893)" "{ inet:arc-milter:8893, default_action=tempfail }"
+
+# relay-mta drops an Authentication-Results in the MX's name; relay-fwd keeps
+# the MX's, which arc-milter copies. Postfix regexp tables are ERE, matched
+# without case.
+ar_rule=$(sh docker/postfix/scripts/own-ar-regexp.sh mail.example.org)
+ar_drops() { printf '%s\n' "$1" | grep -Eiq "$(printf '%s' "$ar_rule" | sed 's|^/||; s|/ IGNORE$||')" && echo dropped || echo kept; }
+want "own AR dropped" "$(ar_drops 'Authentication-Results: mail.example.org; spf=pass')" dropped
+want "own AR dropped, any case" "$(ar_drops 'authentication-results:MAIL.example.org;dkim=pass')" dropped
+want "own AR dropped, version after the id" "$(ar_drops 'Authentication-Results: mail.example.org 1; none')" dropped
+want "foreign AR kept" "$(ar_drops 'Authentication-Results: mx.other.example; spf=pass')" kept
+want "a longer name kept" "$(ar_drops 'Authentication-Results: mail.example.org.evil; spf=pass')" kept
+want "dot is not a wildcard" "$(ar_drops 'Authentication-Results: mailXexample.org; spf=pass')" kept
+want "relay-mta sets the rule" "$(grep -c 'own-ar-regexp.sh "${MAIL_HOSTNAME}"' docker/postfix/scripts/configure-mta.sh)" 1
+# nested_header_checks defaults to header_checks: an attached message keeps its header.
+want "relay-mta: not in attached messages" "$(grep -cx 'postconf -e "nested_header_checks ="' docker/postfix/scripts/configure-mta.sh)" 1
+want "relay-fwd does not" "$(grep -c 'own-ar-regexp' docker/postfix/scripts/configure-fwd.sh docker/postfix/scripts/configure-fwd-out.sh | awk -F: '{s+=$2} END {print s}')" 0
+
 [ "$fails" -eq 0 ] || { echo "$fails render check(s) failed"; exit 1; }

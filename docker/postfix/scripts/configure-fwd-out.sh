@@ -5,6 +5,7 @@ set -eu
 . /common.sh
 
 DKIM_MILTER_ADDR="${DKIM_MILTER_ADDR:-}"
+ARC_MILTER_ADDR="${ARC_MILTER_ADDR:-}"
 POSTSRSD_HOST="${POSTSRSD_HOST:-}"
 SASL_USER="${SASL_USER:?SASL_USER: the account relay-fwd logs in with}"
 SASL_PASSWORD="${SASL_PASSWORD:?SASL_PASSWORD is required}"
@@ -23,9 +24,14 @@ if [ -n "${POSTSRSD_HOST}" ]; then
     postconf -e "sender_canonical_classes = envelope_sender"
 fi
 
+# The ARC sealer after the DKIM signer, so its AMS covers the DKIM-Signature;
+# both tempfail, so a forward waits in the queue rather than leave unsigned.
 _milters=""
 if [ -n "${DKIM_MILTER_ADDR}" ]; then
     _milters="{ inet:${DKIM_MILTER_ADDR}, default_action=tempfail }"
+fi
+if [ -n "${ARC_MILTER_ADDR}" ]; then
+    _milters="${_milters:+${_milters}, }{ inet:${ARC_MILTER_ADDR}, default_action=tempfail }"
 fi
 postconf -e "milter_protocol = 6"
 postconf -e "smtpd_milters = ${_milters}"

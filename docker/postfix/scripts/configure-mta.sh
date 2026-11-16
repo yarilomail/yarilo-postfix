@@ -31,6 +31,14 @@ _gen_mysql_cf /etc/postfix/mysql-sender-login.cf \
     "SELECT username FROM mailbox WHERE username='%u@%d' AND active=1 UNION ALL SELECT goto FROM alias WHERE address='%u@%d' AND active=1"
 postconf -e "smtpd_sender_login_maps = mysql:/etc/postfix/mysql-sender-login.cf"
 
+# Every message here comes from a login: one that brings an
+# Authentication-Results in the MX's name loses it before arc-milter could
+# copy it on a forward.
+sh /own-ar-regexp.sh "${MAIL_HOSTNAME}" > /etc/postfix/own-auth-results.regexp
+postconf -e "header_checks = regexp:/etc/postfix/own-auth-results.regexp"
+# Not inside an attached message: its header is one the MX wrote for real.
+postconf -e "nested_header_checks ="
+
 _milters="inet:${RSPAMD_ADDR}"
 # mailfrom-milter and the signer default to tempfail: with either down mail waits
 # in the queue instead of leaving unchecked or unsigned; rspamd keeps accept.
