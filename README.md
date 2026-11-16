@@ -162,6 +162,7 @@ helm upgrade --install yarilo-relay helm/ \
 | `fwdOut.enabled` | `false` | Deploy relay-fwd-out; needs `fwd.enabled`, `fwd.tls.secretName`, `fwdOut.saslUser`, `fwdOut.saslSecretName` and `fwdOut.tls.secretName`. `fwd.dkimMilter.addr` beside it refuses to render |
 | `fwdOut.saslUser`, `fwdOut.saslSecretName` | --- | relay-fwd's login on relay-fwd-out; the Secret's `password` key is read by both relays |
 | `fwdOut.dkimMilter.addr` | --- | relay-fwd-out's signer, e.g. `dkim-milter-fwd:8891`; with `opendkim.enabled` it refuses to render |
+| `fwdOut.arcMilter.addr` | --- | relay-fwd-out's ARC sealer, e.g. `arc-milter:8893` ([yarilomail/arc-milter](https://github.com/yarilomail/arc-milter)), added after the DKIM signer (`ARC_MILTER_ADDR`) with `default_action=tempfail`, so its ARC-Message-Signature covers the forwarder's DKIM-Signature and a forward waits in the queue while the sealer is down. arc-milter's own chart opens its port to relay-fwd-out only (`networkPolicy`) |
 | `fwdOut.tls.secretName`, `fwdOut.tls.certificate.*` | --- | relay-fwd-out's certificate, as `fwd.tls`; its names must cover `relay-fwd-out.<namespace>.svc.cluster.local` |
 | `fwdOut.rateLimit.messagesPerMinute` | `0` | forwarded messages per minute through relay-fwd-out; over it relay-fwd gets 4xx and retries from its queue |
 | `fwdOut.service.port` | `587` | relay-fwd-out's port |
@@ -267,6 +268,8 @@ rspamd's `milter_headers` (`relay-rspamd-config`, `milter_headers.conf`) adds tw
 
 - `Authentication-Results` with the authserv-id `mail.hostname` and the SPF, DKIM and DMARC results of the arrival. An `Authentication-Results` the sender brought with that same authserv-id is removed first (`remove_ar_from`), so a forged `dmarc=pass` never reaches the mailbox or, on a forward, arc-milter, which copies this header into the ARC seal. Headers with other authserv-ids stay.
 - `X-Spam-Score`, rspamd's score as a number (`6.30`), which yarilo's Sieve `spamtest` reads (`sieve_spamtest_status_header`). One the sender brought is removed.
+
+rspamd removes a forged `Authentication-Results` only from mail it adds its own to. relay-mta, where every message comes from a login, drops any `Authentication-Results` naming `mail.hostname` with a `header_checks` rule (`/etc/postfix/own-auth-results.regexp`), so a user cannot put results in the MX's name into a message that a recipient's redirect then forwards with an ARC seal. relay-fwd has no such rule: a redirected message keeps the MX's header, which arc-milter copies.
 
 `X-Spam: Yes` (the proxy's `spam_header`, from `rspamd.addHeaderScore`) is added as before.
 

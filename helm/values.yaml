@@ -147,6 +147,10 @@ fwdOut:
   # dkim-milter-fwd as host:port (signHopsBefore 1 there).
   dkimMilter:
     addr: ""
+  # arc-milter as host:port, after the DKIM signer; empty: no ARC seal. Its
+  # chart's NetworkPolicy opens the milter port to relay-fwd-out only.
+  arcMilter:
+    addr: ""
   tls:
     secretName: ""
     certificate:

@@ -10,6 +10,7 @@ RUN apk add --no-cache \
     && mkdir -p /etc/postfix/sasl /etc/sasl2
 COPY scripts/entrypoint.sh /entrypoint.sh
 COPY scripts/common.sh /common.sh
+COPY scripts/own-ar-regexp.sh /own-ar-regexp.sh
 COPY scripts/configure-mx.sh /configure-mx.sh
 COPY scripts/configure-mta.sh /configure-mta.sh
 COPY scripts/configure-fwd.sh /configure-fwd.sh

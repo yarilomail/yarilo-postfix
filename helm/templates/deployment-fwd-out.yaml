@@ -53,6 +53,10 @@ spec:
             - name: DKIM_MILTER_ADDR
               value: {{ . | quote }}
             {{- end }}
+            {{- with .Values.fwdOut.arcMilter.addr }}
+            - name: ARC_MILTER_ADDR
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.postsrsd.enabled }}
             - name: POSTSRSD_HOST
               value: "relay-postsrsd"
