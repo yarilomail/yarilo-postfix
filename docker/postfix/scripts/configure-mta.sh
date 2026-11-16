@@ -36,6 +36,8 @@ postconf -e "smtpd_sender_login_maps = mysql:/etc/postfix/mysql-sender-login.cf"
 # copy it on a forward.
 sh /own-ar-regexp.sh "${MAIL_HOSTNAME}" > /etc/postfix/own-auth-results.regexp
 postconf -e "header_checks = regexp:/etc/postfix/own-auth-results.regexp"
+# Not inside an attached message: its header is one the MX wrote for real.
+postconf -e "nested_header_checks ="
 
 _milters="inet:${RSPAMD_ADDR}"
 # mailfrom-milter and the signer default to tempfail: with either down mail waits

@@ -149,6 +149,8 @@ want "foreign AR kept" "$(ar_drops 'Authentication-Results: mx.other.example; sp
 want "a longer name kept" "$(ar_drops 'Authentication-Results: mail.example.org.evil; spf=pass')" kept
 want "dot is not a wildcard" "$(ar_drops 'Authentication-Results: mailXexample.org; spf=pass')" kept
 want "relay-mta sets the rule" "$(grep -c 'own-ar-regexp.sh "${MAIL_HOSTNAME}"' docker/postfix/scripts/configure-mta.sh)" 1
+# nested_header_checks defaults to header_checks: an attached message keeps its header.
+want "relay-mta: not in attached messages" "$(grep -cx 'postconf -e "nested_header_checks ="' docker/postfix/scripts/configure-mta.sh)" 1
 want "relay-fwd does not" "$(grep -c 'own-ar-regexp' docker/postfix/scripts/configure-fwd.sh docker/postfix/scripts/configure-fwd-out.sh | awk -F: '{s+=$2} END {print s}')" 0
 
 [ "$fails" -eq 0 ] || { echo "$fails render check(s) failed"; exit 1; }
