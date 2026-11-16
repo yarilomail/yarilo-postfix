@@ -127,6 +127,10 @@ fwdOut:
   saslSecretName: "fwd-out-sasl-secret"
   dkimMilter:
     addr: "dkim-milter-fwd:8891"
+  # After the signer. Until the arc key row for fwd.d00001.test exists, it
+  # passes mail on unsealed (arc_messages_total{result="no_key"}).
+  arcMilter:
+    addr: "arc-milter:8893"
   tls:
     secretName: relay-fwd-out-tls
     certificate:
